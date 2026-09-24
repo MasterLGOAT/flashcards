@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2F6F4E">
+<title>Recall</title>
+<style>
+:root {
+  --paper: #EEF0EC;
+  --paper-card: #FBF9F3;
+  --ink: #1E2A26;
+  --ink-soft: #5B6B63;
+  --accent: #2F6F4E;
+  --accent-hover: #255A3F;
+  --accent-tint: #E1EBE4;
+  --gold: #B8923F;
+  --rule-red: #A8433F;
+  --hard-amber: #BD7A3A;
+  --border: #DCDFD6;
+  --shadow-rgb: 30,41,38;
+  --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #141B18;
+    --paper-card: #1C2620;
+    --ink: #EDEAE0;
+    --ink-soft: #9CA89F;
+    --accent: #5FA37D;
+    --accent-hover: #74B892;
+    --accent-tint: #22322A;
+    --gold: #D4B168;
+    --rule-red: #C1615C;
+    --hard-amber: #D69457;
+    --border: #2C3830;
+    --shadow-rgb: 0,0,0;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+#app { min-height: 100vh; display: flex; flex-direction: column; }
+button, input, textarea, select { font-family: inherit; color: inherit; font-size: 1rem; }
+button { cursor: pointer; }
+textarea { line-height: 1.4; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 1.5rem 0.5rem;
+  max-width: 640px; width: 100%; margin: 0 auto; gap: 0.5rem;
+}
+.brand { display: flex; align-items: center; gap: 0.35rem; }
+.brand-mark { font-family: var(--font-serif); font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; }
+.icon-btn {
+  background: none; border: none; padding: 0.55rem; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-soft); transition: background 0.15s, color 0.15s; flex-shrink: 0;
+}
+.icon-btn:hover { background: var(--accent-tint); color: var(--accent); }
+.icon-btn.active { color: var(--accent); }
+
+.view-wrap { flex: 1; max-width: 640px; width: 100%; margin: 0 auto; padding: 0.5rem 1.5rem 3rem; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 0.75rem 1.15rem; border-radius: 12px; border: 1px solid transparent;
+  font-size: 0.95rem; font-weight: 600; transition: transform 0.1s, background 0.15s, border-color 0.15s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-ghost { background: transparent; border-color: var(--border); color: var(--ink); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-text { background: none; border: none; color: var(--ink-soft); font-weight: 500; padding: 0.4rem 0.2rem; font-size: 0.85rem; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border); }
+.btn-text:hover { color: var(--accent); text-decoration-color: var(--accent); }
+.btn-danger-text { color: var(--rule-red); }
+.btn-block { width: 100%; }
+.btn-sm { padding: 0.5rem 0.85rem; font-size: 0.85rem; border-radius: 9px; }
+
+.notice-banner {
+  background: var(--accent-tint); border-radius: 14px; padding: 1rem 1.25rem; margin: 0.5rem 0 1.25rem;
+  font-size: 0.88rem; color: var(--ink);
+}
+.notice-banner.warn { border: 1px solid var(--rule-red); }
+
+.due-banner {
+  background: var(--accent-tint); border-radius: 14px; padding: 1rem 1.25rem;
+  margin: 0.5rem 0 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+.due-banner-text { font-size: 0.95rem; }
+.due-banner-count { font-family: var(--font-serif); font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+.streak-pill { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 0.75rem; }
+
+.deck-list { border-top: 1px solid var(--border); }
+.deck-row {
+  display: flex; align-items: center; gap: 0.9rem; padding: 1rem 0.25rem;
+  border: none; border-bottom: 1px solid var(--border); background: none;
+  width: 100%; text-align: left;
+}
+.deck-row:hover .deck-name { color: var(--accent); }
+.deck-tab { width: 4px; align-self: stretch; border-radius: 3px; background: var(--accent); flex-shrink: 0; min-height: 2.75rem; }
+.deck-tab.idle { background: var(--border); }
+.deck-info { flex: 1; min-width: 0; }
+.deck-name { font-size: 1.05rem; font-weight: 600; margin: 0 0 0.2rem; transition: color 0.15s; }
+.deck-meta { font-size: 0.85rem; color: var(--ink-soft); }
+.deck-stage-bar { height: 4px; border-radius: 2px; overflow: hidden; display: flex; margin-top: 0.55rem; background: var(--border); max-width: 220px; }
+.deck-stage-bar span { height: 100%; }
+.due-pill {
+  background: var(--rule-red); color: #fff; font-size: 0.8rem; font-weight: 700;
+  padding: 0.3rem 0.65rem; border-radius: 999px; flex-shrink: 0; min-width: 1.6rem; text-align: center;
+}
+.deck-chevron { color: var(--ink-soft); flex-shrink: 0; }
+
+.empty-state { text-align: center; padding: 3rem 1rem; }
+.empty-state h2 { font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 0.6rem; }
+.empty-state p { color: var(--ink-soft); max-width: 34ch; margin: 0 auto 1.75rem; }
+
+.footer-links { display: flex; gap: 1.5rem; justify-content: center; margin-top: 2.5rem; flex-wrap: wrap; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; padding: 0; }
+
+.import-panel h2, .manage-header h2 { font-family: var(--font-serif); font-size: 1.4rem; margin: 0.5rem 0 1.25rem; font-weight: 700; }
+.dropzone {
+  border: 2px dashed var(--border); border-radius: 16px; padding: 2.75rem 1.5rem;
+  text-align: center; transition: border-color 0.15s, background 0.15s; color: var(--ink-soft);
+}
+.dropzone.dragover { border-color: var(--accent); background: var(--accent-tint); }
+.dropzone strong { color: var(--ink); }
+.dropzone p { margin: 0.6rem 0 0; font-size: 0.9rem; }
+.dropzone .icon-wrap { color: var(--ink-soft); }
+
+.field { margin-bottom: 1.1rem; }
+.field label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--ink-soft); }
+.field input[type=text], .field textarea, .field select {
+  width: 100%; padding: 0.7rem 0.85rem; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--paper-card);
+}
+.field textarea { resize: vertical; min-height: 4.5rem; }
+
+.import-preview { background: var(--paper-card); border-radius: 14px; padding: 1.25rem; margin-top: 0.25rem; border: 1px solid var(--border); }
+.import-preview-count { font-family: var(--font-serif); font-size: 1.25rem; margin: 0 0 0.9rem; }
+.preview-row { display: flex; gap: 0.75rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: var(--ink-soft); }
+.preview-row:last-child { border-bottom: none; }
+.preview-row span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.search-input {
+  width: 100%; padding: 0.65rem 0.9rem; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--paper-card); margin-bottom: 1rem;
+}
+.manage-title-input {
+  font-family: var(--font-serif); font-size: 1.35rem; font-weight: 700; border: none; background: none;
+  width: 100%; border-bottom: 1px solid transparent; padding: 0.15rem 0;
+}
+.manage-title-input:focus { outline: none; border-bottom-color: var(--accent); }
+.manage-meta { font-size: 0.85rem; color: var(--ink-soft); margin: 0.15rem 0 1.1rem; }
+
+.tts-settings { display: flex; flex-direction: column; gap: 0.75rem; margin: 0.85rem 0 1.1rem; }
+.tts-field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 0.3rem; }
+.tts-field-row { display: flex; align-items: center; gap: 0.5rem; }
+.tts-field-row select { flex: 1; min-width: 0; padding: 0.6rem 0.7rem; border-radius: 9px; border: 1px solid var(--border); background: var(--paper-card); font-size: 0.9rem; }
+.tts-test-btn { background: var(--accent-tint); border: none; border-radius: 8px; padding: 0.55rem; color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.study-topline { display: flex; align-items: center; justify-content: space-between; margin: 0.25rem 0 0.75rem; font-size: 0.85rem; color: var(--ink-soft); }
+.progress-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 1.75rem; }
+.progress-fill { height: 100%; background: var(--accent); }
+
+.card-stage { position: relative; padding: 0.5rem 0 1.75rem; display: flex; justify-content: center; }
+.flashcard { position: relative; width: 100%; max-width: 400px; aspect-ratio: 3 / 4; margin: 0 auto; perspective: 1600px; }
+.flashcard::before, .flashcard::after {
+  content: ''; position: absolute; inset: 0; background: var(--paper-card); border: 1px solid var(--border);
+  border-radius: 18px; z-index: 0;
+}
+.flashcard::before { transform: rotate(-4deg) translateY(4px); opacity: 0.5; }
+.flashcard::after { transform: rotate(3deg) translateY(2px); opacity: 0.75; }
+.flashcard-inner {
+  position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.55s cubic-bezier(0.4,0.15,0.2,1);
+  cursor: pointer; z-index: 1;
+}
+.study-card-area.flipped .flashcard-inner { transform: rotateY(180deg); }
+.card-face {
+  position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: var(--paper-card); border-radius: 18px; border: 1px solid var(--border);
+  box-shadow: 0 10px 30px -8px rgba(var(--shadow-rgb), 0.28);
+  display: flex; padding: 2rem 1.6rem; overflow: hidden;
+}
+.card-face::before {
+  content: ''; position: absolute; left: 1.4rem; top: 0; bottom: 0; width: 1px; background: var(--rule-red); opacity: 0.5;
+}
+.card-back { transform: rotateY(180deg); }
+.card-face-content {
+  flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
+  font-family: var(--font-serif); font-size: clamp(1.4rem, 5.5vw, 2.1rem); line-height: 1.25; padding-left: 0.75rem;
+  word-break: break-word; hyphens: auto;
+}
+.card-back .card-face-content { font-size: clamp(1.1rem, 4vw, 1.45rem); }
+
+.flip-hint { text-align: center; font-size: 0.85rem; color: var(--ink-soft); margin: 0; }
+.study-card-area.flipped .flip-hint { display: none; }
+.kbd-hint { display: none; }
+@media (hover: hover) and (pointer: fine) { .kbd-hint { display: inline; } }
+
+.grade-row { display: none; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-top: 0; }
+.study-card-area.flipped .grade-row { display: grid; }
+.grade-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.8rem 0.4rem;
+  border-radius: 12px; border: 1px solid var(--border); background: var(--paper-card); font-weight: 700; font-size: 0.88rem;
+}
+.grade-btn .interval { font-weight: 500; font-size: 0.72rem; color: var(--ink-soft); }
+.grade-again { color: var(--rule-red); border-color: var(--rule-red); }
+.grade-hard { color: var(--hard-amber); border-color: var(--hard-amber); }
+.grade-good { color: var(--accent); border-color: var(--accent); }
+.grade-easy { color: var(--gold); border-color: var(--gold); }
+
+.speak-btn {
+  position: absolute; top: 0.85rem; right: 0.85rem; z-index: 2;
+  background: var(--accent-tint); border: none; border-radius: 999px; padding: 0.5rem;
+  color: var(--accent); display: flex; align-items: center; justify-content: center;
+}
+.speak-btn:active { transform: scale(0.92); }
+
+.session-end { text-align: center; padding: 3.5rem 1rem; }
+.session-end h2 { font-family: var(--font-serif); font-size: 1.6rem; margin-bottom: 0.6rem; }
+.session-end p { color: var(--ink-soft); margin-bottom: 1.75rem; }
+.session-end .btn-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+.card-row { border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.6rem; background: var(--paper-card); }
+.card-row-view { display: flex; align-items: flex-start; gap: 0.75rem; }
+.card-row-text { flex: 1; min-width: 0; }
+.card-row-front { font-weight: 600; margin: 0 0 0.2rem; }
+.card-row-back { color: var(--ink-soft); font-size: 0.9rem; margin: 0; }
+.card-row-due { font-size: 0.75rem; color: var(--ink-soft); margin-top: 0.4rem; }
+.card-row-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.card-edit-actions { display: flex; gap: 0.6rem; margin-top: 0.6rem; justify-content: flex-end; }
+.add-card-panel { border: 1px dashed var(--border); border-radius: 12px; padding: 1rem; margin-top: 0.75rem; }
+
+.toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--paper); padding: 0.75rem 1.25rem; border-radius: 10px;
+  font-size: 0.88rem; opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s; z-index: 50;
+  max-width: calc(100vw - 3rem); text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 480px) {
+  .grade-row { gap: 0.4rem; }
+  .grade-btn { font-size: 0.78rem; padding: 0.7rem 0.2rem; }
+}
+
+/* --- Match --- */
+.match-topline { display: flex; align-items: center; justify-content: space-between; margin: 0.25rem 0 1rem; font-size: 0.9rem; color: var(--ink-soft); }
+.match-timer { font-family: var(--font-serif); font-weight: 700; color: var(--accent); font-size: 1.15rem; }
+.match-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.55rem; }
+@media (min-width: 480px) { .match-grid { grid-template-columns: repeat(4, 1fr); } }
+.match-tile {
+  background: var(--paper-card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 0.75rem 0.5rem; min-height: 4.75rem; display: flex; align-items: center; justify-content: center;
+  text-align: center; font-size: 0.82rem; line-height: 1.3; word-break: break-word;
+  transition: opacity 0.3s, transform 0.3s, background 0.15s, border-color 0.15s;
+}
+.match-tile.selected { border-color: var(--accent); background: var(--accent-tint); }
+.match-tile.wrong { border-color: var(--rule-red); animation: tile-shake 0.4s; pointer-events: none; }
+.match-tile.matched { opacity: 0; transform: scale(0.85); pointer-events: none; }
+@keyframes tile-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* --- Learn --- */
+.learn-prompt-label { font-size: 0.8rem; color: var(--ink-soft); text-align: center; margin-bottom: 0.5rem; }
+.learn-prompt {
+  font-family: var(--font-serif); font-size: clamp(1.3rem, 5vw, 1.8rem); text-align: center;
+  background: var(--paper-card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 1.75rem 1.25rem; margin-bottom: 1.25rem;
+}
+.learn-options { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; }
+.learn-option { background: var(--paper-card); border: 1px solid var(--border); border-radius: 12px; padding: 0.85rem 1rem; text-align: left; font-size: 0.95rem; width: 100%; }
+.learn-option:not(.locked):active { transform: scale(0.98); }
+.learn-option.locked { opacity: 0.7; }
+.option-correct { border-color: var(--accent); background: var(--accent-tint); opacity: 1; font-weight: 600; }
+.option-wrong { border-color: var(--rule-red); opacity: 1; }
+.learn-feedback { text-align: center; font-weight: 600; padding: 0.75rem; border-radius: 10px; margin-bottom: 0.5rem; }
+.learn-feedback.is-correct { color: var(--accent); background: var(--accent-tint); }
+.learn-feedback.is-wrong { color: var(--rule-red); }
+.learn-override-row { text-align: center; margin-bottom: 0.5rem; }
+
+/* --- Free Fall --- */
+.fallzone { position: relative; height: 320px; border: 1px solid var(--border); border-radius: 16px; background: var(--paper-card); overflow: hidden; margin-bottom: 1rem; }
+.fallzone::after { content: ''; position: absolute; left: 0; right: 0; bottom: 44px; height: 2px; background: var(--rule-red); opacity: 0.4; }
+.fall-tile {
+  position: absolute; left: 8%; right: 8%; top: -12%;
+  background: var(--accent-tint); border: 1px solid var(--accent); border-radius: 10px;
+  padding: 0.6rem 0.75rem; text-align: center; font-weight: 600; font-size: 0.95rem;
+  animation-name: fall-drop; animation-timing-function: linear; animation-fill-mode: forwards;
+}
+.fall-tile.caught { animation-play-state: paused; opacity: 0; transform: scale(1.15); transition: opacity 0.3s, transform 0.3s; }
+@keyframes fall-drop { from { top: -12%; } to { top: 90%; } }
+.lives { letter-spacing: 0.1em; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .flashcard-inner, .match-tile { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast" aria-live="polite"></div>
+<noscript>Recall needs JavaScript enabled to run.</noscript>
+<script>
+// ---------------------------------------------------------------------
+// Icons
+// ---------------------------------------------------------------------
+const ICONS = {
+  plus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  trash: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/></svg>',
+  edit: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
+  back: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>',
+  chevron: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
+  upload: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>',
+  bell: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+  speaker: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>'
+};
+
+// ---------------------------------------------------------------------
+// Storage
+// ---------------------------------------------------------------------
+const STORAGE_KEY = 'recall_app_state_v1';
+
+function testStorage() {
+  try {
+    localStorage.setItem('__recall_probe__', '1');
+    localStorage.removeItem('__recall_probe__');
+    return true;
+  } catch (e) { return false; }
+}
+const storageAvailable = testStorage();
+
+function defaultState() {
+  return { decks: [], streak: { count: 0, lastStudyDate: null, longest: 0 } };
+}
+
+function loadState() {
+  if (!storageAvailable) return defaultState();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.decks)) return defaultState();
+    if (!parsed.streak) parsed.streak = { count: 0, lastStudyDate: null, longest: 0 };
+    return parsed;
+  } catch (e) { return defaultState(); }
+}
+
+function saveState() {
+  if (!storageAvailable) return;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); }
+  catch (e) { showToast("Couldn't save — storage may be full or blocked."); }
+}
+
+// ---------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------
+function generateId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }
+
+function todayISO() {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+function addDaysISO(iso, days) {
+  const parts = iso.split('-').map(Number);
+  const utcMs = Date.UTC(parts[0], parts[1] - 1, parts[2]) + days * 86400000;
+  return new Date(utcMs).toISOString().slice(0, 10);
+}
+function formatDateHuman(iso) {
+  const today = todayISO();
+  if (iso <= today) return 'now';
+  if (iso === addDaysISO(today, 1)) return 'tomorrow';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+function formatInterval(days) {
+  if (days < 30) return days + 'd';
+  if (days < 365) return Math.round(days / 30) + 'mo';
+  return (days / 365).toFixed(1) + 'y';
+}
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function csvEscapeField(s) {
+  s = String(s ?? '');
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function downloadBlob(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ---------------------------------------------------------------------
+// CSV parsing
+// ---------------------------------------------------------------------
+function parseCSV(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r') { /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.map(r => r.map(f => f.trim())).filter(r => r.some(f => f.length > 0));
+}
+function looksLikeHeader(row) {
+  const words = ['term', 'front', 'question', 'word', 'prompt', 'definition', 'back', 'answer', 'meaning', 'translation'];
+  return row.some(cell => words.includes(cell.toLowerCase().trim()));
+}
+
+// ---------------------------------------------------------------------
+// SM-2 spaced repetition
+// ---------------------------------------------------------------------
+function initSchedule() {
+  return { repetitions: 0, interval: 0, easeFactor: 2.5, dueDate: todayISO(), lastReviewed: null };
+}
+function scheduleNext(card, quality) {
+  if (quality < 3) {
+    card.repetitions = 0;
+    card.interval = 1;
+  } else {
+    if (card.repetitions === 0) card.interval = 1;
+    else if (card.repetitions === 1) card.interval = 6;
+    else card.interval = Math.round(card.interval * card.easeFactor);
+    card.repetitions += 1;
+  }
+  card.easeFactor = Math.max(1.3, card.easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)));
+  card.lastReviewed = todayISO();
+  card.dueDate = addDaysISO(todayISO(), card.interval);
+  return card;
+}
+function previewInterval(card, quality) {
+  const clone = { repetitions: card.repetitions, interval: card.interval, easeFactor: card.easeFactor };
+  scheduleNext(clone, quality);
+  return clone.interval;
+}
+function isDue(card) { return card.dueDate <= todayISO(); }
+function cardStage(card) {
+  if (card.repetitions === 0) return 'new';
+  if (card.interval < 21) return 'learning';
+  return 'mastered';
+}
+function deckStageBreakdown(deck) {
+  let n = 0, l = 0, m = 0;
+  deck.cards.forEach(c => { const s = cardStage(c); if (s === 'new') n++; else if (s === 'learning') l++; else m++; });
+  return { n, l, m, total: deck.cards.length };
+}
+
+// ---------------------------------------------------------------------
+// Text-to-speech
+// ---------------------------------------------------------------------
+const ttsSupported = ('speechSynthesis' in window);
+const TTS_LANGUAGES = [
+  ['', 'Off'],
+  ['fr-FR', 'French'],
+  ['es-ES', 'Spanish'],
+  ['de-DE', 'German'],
+  ['it-IT', 'Italian'],
+  ['en-GB', 'English (UK)'],
+  ['en-US', 'English (US)'],
+  ['pt-PT', 'Portuguese'],
+  ['nl-NL', 'Dutch'],
+  ['pl-PL', 'Polish'],
+  ['ru-RU', 'Russian'],
+  ['zh-CN', 'Mandarin Chinese'],
+  ['ja-JP', 'Japanese'],
+  ['ar-SA', 'Arabic']
+];
+function langOptionsHTML(selected) {
+  return TTS_LANGUAGES.map(function (pair) {
+    return '<option value="' + pair[0] + '"' + (pair[0] === (selected || '') ? ' selected' : '') + '>' + pair[1] + '</option>';
+  }).join('');
+}
+function speak(text, lang) {
+  if (!ttsSupported || !lang) return;
+  try {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.onerror = function () { showToast("Couldn't play audio — this device may not have that language installed."); };
+    window.speechSynthesis.speak(utterance);
+  } catch (e) { showToast("Couldn't play audio on this device."); }
+}
+function setDeckLang(deckId, side, value) {
+  const deck = getDeck(deckId);
+  if (side === 'front') deck.frontLang = value; else deck.backLang = value;
+  saveState();
+  render();
+}
+function testDeckVoice(deckId, side) {
+  const deck = getDeck(deckId);
+  if (!deck.cards.length) { showToast('Add a card first to test the voice.'); return; }
+  const lang = side === 'front' ? deck.frontLang : deck.backLang;
+  const text = side === 'front' ? deck.cards[0].front : deck.cards[0].back;
+  speak(text, lang);
+}
+
+// ---------------------------------------------------------------------
+// Streak
+// ---------------------------------------------------------------------
+function recordStudyActivity() {
+  const today = todayISO();
+  if (appState.streak.lastStudyDate === today) return;
+  const yesterday = addDaysISO(today, -1);
+  appState.streak.count = (appState.streak.lastStudyDate === yesterday) ? appState.streak.count + 1 : 1;
+  appState.streak.lastStudyDate = today;
+  if (appState.streak.count > appState.streak.longest) appState.streak.longest = appState.streak.count;
+}
+
+// ---------------------------------------------------------------------
+// Answer matching (shared by Learn and Free Fall)
+// ---------------------------------------------------------------------
+function stripAccents(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+function normalizeAnswer(s) {
+  return String(s || '').trim().toLowerCase().replace(/[.,!?;:'"()]/g, '').replace(/\s+/g, ' ');
+}
+function answersMatch(userAns, correctAns) {
+  const u = normalizeAnswer(userAns), c = normalizeAnswer(correctAns);
+  if (!u) return { correct: false, accentNote: false };
+  if (u === c) return { correct: true, accentNote: false };
+  if (stripAccents(u) === stripAccents(c)) return { correct: true, accentNote: true };
+  return { correct: false, accentNote: false };
+}
+
+// ---------------------------------------------------------------------
+// Match game
+// ---------------------------------------------------------------------
+function startMatch(deckId) {
+  if (ttsSupported) window.speechSynthesis.cancel();
+  const deck = getDeck(deckId);
+  if (!deck || deck.cards.length < 2) { showToast('Add at least 2 cards to play Match.'); return; }
+  const pairCount = Math.min(6, deck.cards.length);
+  const chosen = shuffle(deck.cards).slice(0, pairCount);
+  let tiles = [];
+  chosen.forEach(function (c) {
+    tiles.push({ cardId: c.id, text: c.front, matched: false });
+    tiles.push({ cardId: c.id, text: c.back, matched: false });
+  });
+  tiles = shuffle(tiles);
+  recordStudyActivity();
+  saveState();
+  ui.matchSession = {
+    deckId: deckId, tiles: tiles, selectedIndex: null, startTime: Date.now(),
+    penaltyMs: 0, matchedPairs: 0, totalPairs: pairCount, finished: false,
+    finalTimeMs: null, isRecord: false, intervalId: null
+  };
+  ui.view = 'match';
+  render();
+  ui.matchSession.intervalId = setInterval(updateMatchTimer, 100);
+}
+function updateMatchTimer() {
+  const s = ui.matchSession;
+  if (!s || s.finished) return;
+  const el = document.getElementById('match-timer');
+  if (!el) return;
+  el.textContent = ((Date.now() - s.startTime + s.penaltyMs) / 1000).toFixed(1) + 's';
+}
+function tapMatchTile(index) {
+  const s = ui.matchSession;
+  if (!s || s.finished) return;
+  const tile = s.tiles[index];
+  if (tile.matched) return;
+  const tileEl = document.querySelector('.match-tile[data-index="' + index + '"]');
+  if (s.selectedIndex === null) {
+    s.selectedIndex = index;
+    if (tileEl) tileEl.classList.add('selected');
+    return;
+  }
+  if (s.selectedIndex === index) {
+    s.selectedIndex = null;
+    if (tileEl) tileEl.classList.remove('selected');
+    return;
+  }
+  const firstIndex = s.selectedIndex;
+  const firstTile = s.tiles[firstIndex];
+  const firstEl = document.querySelector('.match-tile[data-index="' + firstIndex + '"]');
+  s.selectedIndex = null;
+  if (firstTile.cardId === tile.cardId) {
+    firstTile.matched = true; tile.matched = true;
+    if (firstEl) { firstEl.classList.remove('selected'); firstEl.classList.add('matched'); }
+    if (tileEl) tileEl.classList.add('matched');
+    s.matchedPairs++;
+    if (s.matchedPairs >= s.totalPairs) finishMatch();
+  } else {
+    s.penaltyMs += 1000;
+    if (firstEl) { firstEl.classList.remove('selected'); firstEl.classList.add('wrong'); }
+    if (tileEl) tileEl.classList.add('wrong');
+    setTimeout(function () {
+      if (firstEl) firstEl.classList.remove('wrong');
+      if (tileEl) tileEl.classList.remove('wrong');
+    }, 500);
+  }
+}
+function finishMatch() {
+  const s = ui.matchSession;
+  if (!s || s.finished) return;
+  s.finished = true;
+  clearInterval(s.intervalId);
+  const elapsedMs = Date.now() - s.startTime + s.penaltyMs;
+  s.finalTimeMs = elapsedMs;
+  const deck = getDeck(s.deckId);
+  const isRecord = !deck.matchBest || elapsedMs < deck.matchBest;
+  if (isRecord) { deck.matchBest = elapsedMs; saveState(); }
+  s.isRecord = isRecord;
+  setTimeout(render, 600);
+}
+
+// ---------------------------------------------------------------------
+// Learn (progressive mastery quiz)
+// ---------------------------------------------------------------------
+const LEARN_ROUND_SIZE = 7;
+function learnMasteredCount(deck) {
+  return deck.cards.filter(function (c) { return (c.learnLevel || 0) >= 2; }).length;
+}
+function startLearn(deckId) {
+  if (ttsSupported) window.speechSynthesis.cancel();
+  const deck = getDeck(deckId);
+  if (!deck || deck.cards.length < 4) { showToast('Add at least 4 cards to use Learn.'); return; }
+  const remaining = shuffle(deck.cards.filter(function (c) { return (c.learnLevel || 0) < 2; }).map(function (c) { return c.id; }));
+  if (remaining.length === 0) {
+    ui.learnSession = { deckId: deckId, allMastered: true };
+    ui.view = 'learn';
+    render();
+    return;
+  }
+  const queue = remaining.splice(0, LEARN_ROUND_SIZE);
+  ui.learnSession = { deckId: deckId, queue: queue, pending: remaining, allMastered: false, finished: false, feedback: null };
+  advanceLearnQuestion();
+}
+function advanceLearnQuestion() {
+  const s = ui.learnSession;
+  const deck = getDeck(s.deckId);
+  if (s.queue.length === 0) {
+    if (s.pending.length > 0) {
+      s.queue = s.pending.splice(0, LEARN_ROUND_SIZE);
+    } else {
+      s.finished = true;
+      ui.view = 'learn';
+      render();
+      return;
+    }
+  }
+  const cardId = s.queue.shift();
+  const card = deck.cards.find(function (c) { return c.id === cardId; });
+  s.currentCardId = cardId;
+  s.feedback = null;
+  const level = card.learnLevel || 0;
+  s.questionType = level >= 1 ? 'written' : 'choice';
+  if (s.questionType === 'choice') {
+    const correctText = card.back;
+    const others = deck.cards.filter(function (c) { return c.id !== card.id && c.back !== correctText; }).map(function (c) { return c.back; });
+    const uniqueOthers = others.filter(function (text, idx) { return others.indexOf(text) === idx; });
+    const distractors = shuffle(uniqueOthers).slice(0, 3);
+    s.choiceOptions = shuffle([correctText].concat(distractors));
+  }
+  ui.view = 'learn';
+  render();
+}
+function commitLearnLevel(deck, card, correct) {
+  card.learnLevel = correct ? (card.learnLevel || 0) + 1 : 0;
+  if ((card.learnLevel || 0) < 2) ui.learnSession.queue.push(card.id);
+  recordStudyActivity();
+  saveState();
+  ui.learnSession.feedback.committed = true;
+}
+function answerLearnChoice(deckId, pickedText) {
+  const s = ui.learnSession;
+  const deck = getDeck(deckId);
+  const card = deck.cards.find(function (c) { return c.id === s.currentCardId; });
+  const correct = pickedText === card.back;
+  s.feedback = { correct: correct, pickedText: pickedText, correctText: card.back };
+  commitLearnLevel(deck, card, correct);
+  render();
+}
+function submitLearnWritten(deckId) {
+  const s = ui.learnSession;
+  const deck = getDeck(deckId);
+  const card = deck.cards.find(function (c) { return c.id === s.currentCardId; });
+  const input = document.getElementById('learn-written-input');
+  const userAns = input ? input.value : '';
+  const result = answersMatch(userAns, card.back);
+  s.feedback = { correct: result.correct, accentNote: result.accentNote, pickedText: userAns, correctText: card.back };
+  if (result.correct) commitLearnLevel(deck, card, true);
+  render();
+}
+function overrideLearnCorrect(deckId) {
+  const s = ui.learnSession;
+  const deck = getDeck(deckId);
+  const card = deck.cards.find(function (c) { return c.id === s.currentCardId; });
+  commitLearnLevel(deck, card, true);
+  s.feedback.correct = true;
+  s.feedback.overridden = true;
+  render();
+}
+function continueLearn() {
+  const s = ui.learnSession;
+  const deck = getDeck(s.deckId);
+  const card = deck.cards.find(function (c) { return c.id === s.currentCardId; });
+  if (s.feedback && !s.feedback.committed) commitLearnLevel(deck, card, false);
+  advanceLearnQuestion();
+}
+function resetLearnProgress(deckId) {
+  const deck = getDeck(deckId);
+  if (!confirm('Reset Learn progress for "' + deck.name + '"? This starts mastery over from scratch — your Study progress is unaffected.')) return;
+  deck.cards.forEach(function (c) { c.learnLevel = 0; });
+  saveState();
+  startLearn(deckId);
+}
+
+// ---------------------------------------------------------------------
+// Free Fall (typed recall against the clock)
+// ---------------------------------------------------------------------
+const FREEFALL_START_LIVES = 3;
+const FREEFALL_START_DURATION = 9;
+const FREEFALL_MIN_DURATION = 3.5;
+const FREEFALL_SPEEDUP = 0.3;
+function startFreefall(deckId) {
+  if (ttsSupported) window.speechSynthesis.cancel();
+  const deck = getDeck(deckId);
+  if (!deck || deck.cards.length < 3) { showToast('Add at least 3 cards to play Free Fall.'); return; }
+  recordStudyActivity();
+  saveState();
+  ui.freefallSession = {
+    deckId: deckId, lives: FREEFALL_START_LIVES, score: 0,
+    queue: shuffle(deck.cards.map(function (c) { return c.id; })),
+    duration: FREEFALL_START_DURATION, currentCardId: null, tileVersion: 0,
+    resolved: false, finished: false, isRecord: false
+  };
+  ui.view = 'freefall';
+  spawnFreefallTerm();
+}
+function spawnFreefallTerm() {
+  const s = ui.freefallSession;
+  if (!s || s.finished) return;
+  if (s.queue.length === 0) { const deck = getDeck(s.deckId); s.queue = shuffle(deck.cards.map(function (c) { return c.id; })); }
+  s.currentCardId = s.queue.shift();
+  s.tileVersion++;
+  s.resolved = false;
+  ui.view = 'freefall';
+  render();
+  const input = document.getElementById('freefall-input');
+  if (input) input.focus();
+}
+function freefallTileLanded(version) {
+  const s = ui.freefallSession;
+  if (!s || s.finished || s.resolved || version !== s.tileVersion) return;
+  s.resolved = true;
+  s.lives--;
+  if (s.lives <= 0) { setTimeout(finishFreefall, 300); return; }
+  setTimeout(spawnFreefallTerm, 500);
+}
+function submitFreefall(deckId) {
+  const s = ui.freefallSession;
+  if (!s || s.resolved) return;
+  const deck = getDeck(deckId);
+  const card = deck.cards.find(function (c) { return c.id === s.currentCardId; });
+  const input = document.getElementById('freefall-input');
+  const val = input ? input.value : '';
+  const result = answersMatch(val, card.back);
+  if (result.correct) {
+    s.resolved = true;
+    s.score++;
+    s.duration = Math.max(FREEFALL_MIN_DURATION, s.duration - FREEFALL_SPEEDUP);
+    const tileEl = document.querySelector('.fall-tile');
+    if (tileEl) tileEl.classList.add('caught');
+    if (input) input.value = '';
+    setTimeout(spawnFreefallTerm, 350);
+  } else {
+    showToast('Not quite — keep trying!');
+    if (input) { input.value = ''; input.focus(); }
+  }
+}
+function finishFreefall() {
+  if (!ui.freefallSession) return;
+  const s = ui.freefallSession;
+  s.finished = true;
+  const deck = getDeck(s.deckId);
+  const isRecord = !deck.freefallBest || s.score > deck.freefallBest;
+  if (isRecord) { deck.freefallBest = s.score; saveState(); }
+  s.isRecord = isRecord;
+  ui.view = 'freefall';
+  render();
+}
+
+// ---------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------
+let appState = loadState();
+let ui = { view: 'dashboard', session: null, importParsed: null, importFileName: '', manageDeckId: null, manageQuery: '', editingCardId: null, addingCard: false, creatingDeck: false, matchSession: null, learnSession: null, freefallSession: null, pasteMode: false, pasteText: '', aiSettingsOpen: false, aiLoading: false, pasteSkipped: 0, selectMode: false, selectedCardIds: [] };
+
+function getDeck(id) { return appState.decks.find(d => d.id === id); }
+function uniqueDeckName(name) {
+  const existing = new Set(appState.decks.map(d => d.name));
+  if (!existing.has(name)) return name;
+  let i = 2;
+  while (existing.has(name + ' (' + i + ')')) i++;
+  return name + ' (' + i + ')';
+}
+
+// ---------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------
+function render() {
+  document.getElementById('app').innerHTML = topbarHTML() + '<div class="view-wrap">' + viewHTML() + '</div>';
+}
+function viewHTML() {
+  if (ui.view === 'import') return importHTML();
+  if (ui.view === 'study') return studyHTML();
+  if (ui.view === 'manage') return manageHTML();
+  if (ui.view === 'match') return matchHTML();
+  if (ui.view === 'learn') return learnHTML();
+  if (ui.view === 'freefall') return freefallHTML();
+  return dashboardHTML();
+}
+function topbarHTML() {
+  const showBack = ui.view !== 'dashboard';
+  const notifBtn = ('Notification' in window)
+    ? '<button class="icon-btn ' + (Notification.permission === 'granted' ? 'active' : '') + '" onclick="toggleReminders()" title="Reminders" aria-label="Toggle reminders">' + ICONS.bell + '</button>'
+    : '<span></span>';
+  return '<div class="topbar"><div class="brand">' +
+    (showBack ? '<button class="icon-btn" onclick="goDashboard()" aria-label="Back">' + ICONS.back + '</button>' : '') +
+    '<span class="brand-mark">Recall</span></div>' +
+    (ui.view === 'dashboard' ? notifBtn : '<span></span>') +
+    '</div>';
+}
+function goDashboard() {
+  if (ttsSupported) window.speechSynthesis.cancel();
+  if (ui.matchSession && ui.matchSession.intervalId) clearInterval(ui.matchSession.intervalId);
+  ui.matchSession = null; ui.learnSession = null; ui.freefallSession = null;
+  ui.view = 'dashboard'; ui.session = null; ui.importParsed = null;
+  ui.manageDeckId = null; ui.manageQuery = ''; ui.editingCardId = null; ui.addingCard = false; ui.creatingDeck = false;
+  ui.selectMode = false; ui.selectedCardIds = [];
+  render();
+}
+
+// ---------------------------------------------------------------------
+// Dashboard
+// ---------------------------------------------------------------------
+function dashboardHTML() {
+  let html = '';
+  if (!storageAvailable) {
+    html += '<div class="notice-banner warn">Progress can\'t be saved in this view. Open the downloaded file directly in your own browser (not inside a preview) to save decks between visits.</div>';
+  }
+  if (appState.streak.count >= 1) {
+    html += '<div class="streak-pill">\uD83D\uDD25 ' + appState.streak.count + ' day' + (appState.streak.count === 1 ? '' : 's') + ' in a row</div>';
+  }
+  if (appState.decks.length === 0 && !ui.creatingDeck) {
+    html += '<div class="empty-state"><h2>Start your first deck</h2>' +
+      '<p>Bring in a CSV with a term in one column and a definition in the next, or build a deck from scratch.</p>' +
+      '<div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">' +
+      '<button class="btn btn-primary" onclick="goImport()">' + ICONS.upload + ' Choose a CSV file</button>' +
+      '<button class="btn btn-ghost" onclick="ui.creatingDeck=true; render()">Create a deck manually</button>' +
+      '</div></div>';
+    return html;
+  }
+  if (appState.decks.length === 0 && ui.creatingDeck) {
+    html += newDeckFormHTML();
+    return html;
+  }
+  const totalDue = appState.decks.reduce((s, d) => s + d.cards.filter(isDue).length, 0);
+  const decksWithDue = appState.decks.filter(d => d.cards.some(isDue)).length;
+  if (totalDue > 0) {
+    html += '<div class="due-banner"><div class="due-banner-text">Due today across ' + decksWithDue + ' deck' + (decksWithDue === 1 ? '' : 's') + '</div><div class="due-banner-count">' + totalDue + '</div></div>';
+  } else {
+    html += '<div class="due-banner"><div class="due-banner-text">You\'re all caught up — nothing due right now.</div></div>';
+  }
+  html += '<div class="deck-list">';
+  appState.decks.forEach(deck => {
+    const due = deck.cards.filter(isDue).length;
+    const stage = deckStageBreakdown(deck);
+    html += '<button class="deck-row" onclick="openDeck(\'' + deck.id + '\')">' +
+      '<span class="deck-tab ' + (due > 0 ? '' : 'idle') + '"></span>' +
+      '<span class="deck-info"><p class="deck-name">' + escapeHtml(deck.name) + '</p>' +
+      '<span class="deck-meta">' + deck.cards.length + ' card' + (deck.cards.length === 1 ? '' : 's') + '</span>' +
+      (stage.total ? '<span class="deck-stage-bar"><span style="width:' + (stage.n / stage.total * 100) + '%;background:var(--border)"></span><span style="width:' + (stage.l / stage.total * 100) + '%;background:var(--hard-amber)"></span><span style="width:' + (stage.m / stage.total * 100) + '%;background:var(--accent)"></span></span>' : '') +
+      '</span>' +
+      (due > 0 ? '<span class="due-pill">' + due + '</span>' : '') +
+      '<span class="deck-chevron">' + ICONS.chevron + '</span></button>';
+  });
+  html += '</div>';
+  if (ui.creatingDeck) {
+    html += '<div style="margin-top:1.5rem;">' + newDeckFormHTML() + '</div>';
+  } else {
+    html += '<div style="display:flex; gap:0.75rem; margin-top:1.5rem;">' +
+      '<button class="btn btn-ghost" style="flex:1;" onclick="goImport()">' + ICONS.plus + 'Import</button>' +
+      '<button class="btn btn-ghost" style="flex:1;" onclick="ui.creatingDeck=true; render()">' + ICONS.plus + 'Create</button></div>';
+  }
+  html += '<div class="footer-links"><button class="btn-text" onclick="exportBackup()">Back up all data</button>' +
+    '<button class="btn-text" onclick="document.getElementById(\'restore-input\').click()">Restore from backup</button>' +
+    '<input type="file" id="restore-input" accept="application/json,.json" class="visually-hidden" onchange="handleRestoreFile(this.files[0])"></div>';
+  return html;
+}
+
+function openDeck(deckId) {
+  ui.manageDeckId = deckId; ui.manageQuery = ''; ui.editingCardId = null; ui.addingCard = false;
+  ui.selectMode = false; ui.selectedCardIds = [];
+  ui.view = 'manage';
+  render();
+}
+function newDeckFormHTML() {
+  return '<div class="add-card-panel"><p style="font-weight:600; margin:0 0 0.75rem;">New deck</p>' +
+    '<div class="field" style="margin-bottom:0.75rem;"><label>Deck name</label>' +
+    '<input type="text" id="new-deck-name" placeholder="e.g. Spanish verbs"></div>' +
+    '<div class="card-edit-actions"><button class="btn-text" onclick="ui.creatingDeck=false; render()">Cancel</button>' +
+    '<button class="btn btn-primary btn-sm" onclick="submitNewDeck()">Create deck</button></div></div>';
+}
+function submitNewDeck() {
+  const input = document.getElementById('new-deck-name');
+  const name = input.value.trim();
+  if (!name) { showToast('Give your deck a name.'); return; }
+  const newDeck = { id: generateId(), name: uniqueDeckName(name), createdAt: Date.now(), cards: [], frontLang: '', backLang: '' };
+  appState.decks.push(newDeck);
+  saveState();
+  ui.creatingDeck = false;
+  ui.manageDeckId = newDeck.id;
+  ui.manageQuery = '';
+  ui.editingCardId = null;
+  ui.addingCard = true;
+  ui.view = 'manage';
+  render();
+}
+
+// ---------------------------------------------------------------------
+// Import
+// ---------------------------------------------------------------------
+function goImport() {
+  ui.view = 'import'; ui.importParsed = null; ui.importFileName = '';
+  ui.pasteMode = false; ui.pasteText = ''; ui.aiSettingsOpen = false; ui.aiLoading = false; ui.pasteSkipped = 0;
+  render();
+}
+
+// ---------------------------------------------------------------------
+// AI-assisted import (optional, needs the user's own free Gemini key)
+// ---------------------------------------------------------------------
+function getGeminiKey() { try { return localStorage.getItem('recall_gemini_key') || ''; } catch (e) { return ''; } }
+function setGeminiKey(key) { try { if (key) localStorage.setItem('recall_gemini_key', key); else localStorage.removeItem('recall_gemini_key'); } catch (e) {} }
+function getGeminiModel() { try { return localStorage.getItem('recall_gemini_model') || 'gemini-2.5-flash'; } catch (e) { return 'gemini-2.5-flash'; } }
+function setGeminiModel(m) { try { localStorage.setItem('recall_gemini_model', (m || '').trim() || 'gemini-2.5-flash'); } catch (e) {} }
+function getAIProvider() { try { return localStorage.getItem('recall_ai_provider') || 'gemini'; } catch (e) { return 'gemini'; } }
+function setAIProvider(p) { try { localStorage.setItem('recall_ai_provider', p); } catch (e) {} }
+function getOpenAIKey() { try { return localStorage.getItem('recall_openai_key') || ''; } catch (e) { return ''; } }
+function setOpenAIKey(key) { try { if (key) localStorage.setItem('recall_openai_key', key); else localStorage.removeItem('recall_openai_key'); } catch (e) {} }
+function getOpenAIBaseUrl() { try { return localStorage.getItem('recall_openai_base_url') || 'https://inference.api.nscale.com/v1'; } catch (e) { return 'https://inference.api.nscale.com/v1'; } }
+function setOpenAIBaseUrl(u) { try { localStorage.setItem('recall_openai_base_url', (u || '').trim() || 'https://inference.api.nscale.com/v1'); } catch (e) {} }
+function getOpenAIModel() { try { return localStorage.getItem('recall_openai_model') || 'openai/gpt-oss-120b'; } catch (e) { return 'openai/gpt-oss-120b'; } }
+function setOpenAIModel(m) { try { localStorage.setItem('recall_openai_model', (m || '').trim() || 'openai/gpt-oss-120b'); } catch (e) {} }
+function hasAIKey() { return getAIProvider() === 'gemini' ? !!getGeminiKey() : !!getOpenAIKey(); }
+
+function splitOnce(line, regex) {
+  const m = line.match(regex);
+  if (!m) return null;
+  const front = line.slice(0, m.index).trim();
+  const back = line.slice(m.index + m[0].length).trim();
+  return (front && back) ? [front, back] : null;
+}
+function parseNotesHeuristic(text) {
+  const rawLines = text.split(/\r\n|\r|\n/).filter(function (l) { return l.trim().length > 0; });
+  if (rawLines.length === 0) return { pairs: [], skipped: 0, method: 'none' };
+  const delimiters = [
+    { name: 'tab', regex: /\t/ },
+    { name: 'em dash', regex: /\s+—\s+/ },
+    { name: 'en dash', regex: /\s+–\s+/ },
+    { name: 'hyphen', regex: /\s+-\s+/ },
+    { name: 'colon', regex: /:\s+/ },
+    { name: 'equals sign', regex: /\s+=\s+/ }
+  ];
+  let best = null;
+  delimiters.forEach(function (d) {
+    let count = 0;
+    rawLines.forEach(function (line) { if (splitOnce(line, d.regex)) count++; });
+    if (count >= Math.ceil(rawLines.length * 0.6) && (!best || count > best.count)) best = { name: d.name, regex: d.regex, count: count };
+  });
+  if (best) {
+    const pairs = []; let skipped = 0;
+    rawLines.forEach(function (line) {
+      const r = splitOnce(line, best.regex);
+      if (r) pairs.push(r); else skipped++;
+    });
+    return { pairs: pairs, skipped: skipped, method: best.name };
+  }
+  if (rawLines.length >= 2 && rawLines.length % 2 === 0) {
+    const pairs = [];
+    for (let i = 0; i < rawLines.length; i += 2) pairs.push([rawLines[i].trim(), rawLines[i + 1].trim()]);
+    return { pairs: pairs, skipped: 0, method: 'alternating lines' };
+  }
+  return { pairs: [], skipped: rawLines.length, method: 'none' };
+}
+function handlePasteAutoSplit() {
+  const text = ui.pasteText;
+  if (!text.trim()) { showToast('Paste some notes first.'); return; }
+  const result = parseNotesHeuristic(text);
+  if (result.pairs.length === 0) {
+    showToast("Couldn't detect a pattern — try one term and definition per line, separated by a dash or colon.");
+    return;
+  }
+  ui.importParsed = result.pairs;
+  ui.importFileName = 'Pasted notes';
+  ui.pasteSkipped = result.skipped;
+  render();
+}
+async function callGeminiForCards(apiKey, notesText) {
+  const model = getGeminiModel();
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
+  const prompt = "You are helping a student convert study notes into flashcards. Read the notes and extract clear term/definition pairs suitable for spaced-repetition flashcards. Use the student's own wording where possible. Return as many pairs as the notes reasonably support.\n\nNotes:\n" + notesText;
+  const requestBody = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'ARRAY',
+        items: { type: 'OBJECT', properties: { front: { type: 'STRING' }, back: { type: 'STRING' } }, required: ['front', 'back'] }
+      }
+    }
+  };
+  let resp;
+  try {
+    resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+  } catch (networkErr) {
+    throw new Error('Could not reach Gemini — check your internet connection.');
+  }
+  if (!resp.ok) {
+    if (resp.status === 400) throw new Error('Gemini rejected the request — check the model name in AI settings.');
+    if (resp.status === 403) throw new Error('That API key was rejected — check it in AI settings.');
+    if (resp.status === 429) throw new Error('Hit the free-tier rate limit — wait a minute and try again.');
+    throw new Error('Gemini returned an error (status ' + resp.status + ').');
+  }
+  let data;
+  try { data = await resp.json(); } catch (e) { throw new Error("Got an unreadable response from Gemini."); }
+  const text = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+  if (!text) throw new Error("Gemini didn't return any content — try again or simplify the notes.");
+  let parsed;
+  try { parsed = JSON.parse(text); } catch (e) { throw new Error("Couldn't understand Gemini's response."); }
+  if (!Array.isArray(parsed)) throw new Error('Unexpected response format from Gemini.');
+  return parsed.filter(function (p) { return p && p.front && p.back; }).map(function (p) { return [String(p.front), String(p.back)]; });
+}
+async function callOpenAICompatForCards(baseUrl, apiKey, model, notesText) {
+  const url = (baseUrl || '').replace(/\/+$/, '') + '/chat/completions';
+  const prompt = "You are helping a student convert study notes into flashcards. Read the notes and extract clear term/definition pairs suitable for spaced-repetition flashcards. Use the student's own wording where possible. Respond with ONLY a JSON array like [{\"front\":\"...\",\"back\":\"...\"}] — no other text, no markdown code fences, no explanation.\n\nNotes:\n" + notesText;
+  let resp;
+  try {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+      body: JSON.stringify({ model: model, messages: [{ role: 'user', content: prompt }], temperature: 0.3 })
+    });
+  } catch (networkErr) {
+    throw new Error('Could not reach the API — this may be your connection, or this provider may not allow requests directly from a browser page.');
+  }
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) throw new Error('That API key was rejected — check it in AI settings.');
+    if (resp.status === 404) throw new Error('Model or base URL not found — check both in AI settings.');
+    if (resp.status === 429) throw new Error('Rate limited — wait a moment and try again.');
+    throw new Error('The API returned an error (status ' + resp.status + ').');
+  }
+  let data;
+  try { data = await resp.json(); } catch (e) { throw new Error('Got an unreadable response.'); }
+  const text = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  if (!text) throw new Error("The API didn't return any content — try again or simplify the notes.");
+  let jsonText = String(text).trim();
+  const fenceMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (fenceMatch) jsonText = fenceMatch[1];
+  let parsed;
+  try { parsed = JSON.parse(jsonText); } catch (e) { throw new Error("Couldn't understand the response as JSON — try again."); }
+  if (!Array.isArray(parsed)) throw new Error('Unexpected response format.');
+  return parsed.filter(function (p) { return p && p.front && p.back; }).map(function (p) { return [String(p.front), String(p.back)]; });
+}
+async function handlePasteAI() {
+  let text = ui.pasteText;
+  if (!text.trim()) { showToast('Paste some notes first.'); return; }
+  if (text.length > 12000) { text = text.slice(0, 12000); showToast('Notes were long — only the first part was sent to AI.'); }
+  if (!hasAIKey()) { showToast('Add a free API key first.'); ui.aiSettingsOpen = true; render(); return; }
+  ui.aiLoading = true;
+  render();
+  try {
+    const provider = getAIProvider();
+    const pairs = provider === 'gemini'
+      ? await callGeminiForCards(getGeminiKey(), text)
+      : await callOpenAICompatForCards(getOpenAIBaseUrl(), getOpenAIKey(), getOpenAIModel(), text);
+    ui.aiLoading = false;
+    if (pairs.length === 0) { showToast("AI couldn't find any term/definition pairs in that text."); render(); return; }
+    ui.importParsed = pairs;
+    ui.importFileName = 'AI-generated deck';
+    ui.pasteSkipped = 0;
+    render();
+  } catch (err) {
+    ui.aiLoading = false;
+    showToast(err && err.message ? err.message : 'AI request failed.');
+    render();
+  }
+}
+function aiSettingsHTML() {
+  const provider = getAIProvider();
+  let html = '<div class="add-card-panel" style="margin-top:1rem;">' +
+    '<p style="font-weight:600; margin:0 0 0.5rem;">AI settings</p>' +
+    '<div class="field"><label>Provider</label><select id="ai-provider-select" onchange="setAIProvider(this.value); render()">' +
+    '<option value="gemini"' + (provider === 'gemini' ? ' selected' : '') + '>Google Gemini (free tier)</option>' +
+    '<option value="openai_compat"' + (provider === 'openai_compat' ? ' selected' : '') + '>OpenAI-compatible (Nscale, etc.)</option>' +
+    '</select></div>';
+  if (provider === 'gemini') {
+    const key = getGeminiKey();
+    const model = getGeminiModel();
+    html += '<p style="font-size:0.85rem; color:var(--ink-soft); margin:0 0 0.75rem;">Free tier, no card required. Get a key at <a href="https://aistudio.google.com" target="_blank" rel="noopener" style="color:var(--accent);">aistudio.google.com</a>.</p>' +
+      '<div class="field"><label>Gemini API key</label><input type="password" id="gemini-key-input" value="' + escapeHtml(key) + '" placeholder="AIza..." autocomplete="off"></div>' +
+      '<div class="field" style="margin-bottom:0.75rem;"><label>Model (advanced, optional)</label><input type="text" id="gemini-model-input" value="' + escapeHtml(model) + '"></div>';
+  } else {
+    const key = getOpenAIKey();
+    const baseUrl = getOpenAIBaseUrl();
+    const model = getOpenAIModel();
+    html += '<p style="font-size:0.85rem; color:var(--ink-soft); margin:0 0 0.75rem;">Works with Nscale or any OpenAI-compatible API. Nscale (<a href="https://www.nscale.com" target="_blank" rel="noopener" style="color:var(--accent);">nscale.com</a>) gives new accounts free starter credit, no card needed, including GPT-OSS models.</p>' +
+      '<div class="field"><label>Base URL</label><input type="text" id="openai-baseurl-input" value="' + escapeHtml(baseUrl) + '"></div>' +
+      '<div class="field"><label>API key</label><input type="password" id="openai-key-input" value="' + escapeHtml(key) + '" placeholder="sk-..." autocomplete="off"></div>' +
+      '<div class="field" style="margin-bottom:0.6rem;"><label>Model</label><input type="text" id="openai-model-input" value="' + escapeHtml(model) + '"></div>' +
+      '<p style="font-size:0.75rem; color:var(--ink-soft); margin:0 0 0.75rem;">I couldn\'t confirm this provider allows requests directly from a browser page like this one — every example in their docs is server-side. If saving works but using it fails with what looks like a connection error, that\'s the likely reason, and it isn\'t fixable from here.</p>';
+  }
+  const hasKey = provider === 'gemini' ? !!getGeminiKey() : !!getOpenAIKey();
+  html += '<div class="card-edit-actions">' +
+    (hasKey ? '<button class="btn-text btn-danger-text" onclick="clearAIKey()">Remove key</button>' : '<span></span>') +
+    '<button class="btn btn-primary btn-sm" onclick="saveAISettings()">Save</button>' +
+    '</div></div>';
+  return html;
+}
+function saveAISettings() {
+  const provider = getAIProvider();
+  if (provider === 'gemini') {
+    const keyInput = document.getElementById('gemini-key-input');
+    const modelInput = document.getElementById('gemini-model-input');
+    setGeminiKey(keyInput ? keyInput.value.trim() : '');
+    setGeminiModel(modelInput ? modelInput.value.trim() : '');
+  } else {
+    const keyInput = document.getElementById('openai-key-input');
+    const urlInput = document.getElementById('openai-baseurl-input');
+    const modelInput = document.getElementById('openai-model-input');
+    setOpenAIKey(keyInput ? keyInput.value.trim() : '');
+    setOpenAIBaseUrl(urlInput ? urlInput.value.trim() : '');
+    setOpenAIModel(modelInput ? modelInput.value.trim() : '');
+  }
+  ui.aiSettingsOpen = false;
+  showToast('AI settings saved');
+  render();
+}
+function clearAIKey() {
+  if (getAIProvider() === 'gemini') setGeminiKey(''); else setOpenAIKey('');
+  ui.aiSettingsOpen = false;
+  render();
+}
+
+function importHTML() {
+  let html = '<div class="import-panel">';
+  if (!ui.importParsed) {
+    if (ui.aiLoading) {
+      html += '<h2>Import a deck</h2><div style="text-align:center; padding:3rem 1rem; color:var(--ink-soft);"><p>Asking AI to read your notes…</p></div>';
+    } else if (ui.pasteMode) {
+      const key = hasAIKey();
+      html += '<h2>Paste your notes</h2>' +
+        '<p style="color:var(--ink-soft); font-size:0.9rem; margin-top:-0.75rem;">One term and definition per line works best — Recall tries to detect the pattern. <button class="btn-text" style="padding:0;" onclick="ui.pasteMode=false; render()">Use a CSV file instead</button></p>' +
+        '<div class="field"><textarea id="paste-notes-textarea" rows="10" placeholder="le chien - dog&#10;la maison - house" oninput="ui.pasteText=this.value">' + escapeHtml(ui.pasteText) + '</textarea></div>' +
+        '<button class="btn btn-primary btn-block" onclick="handlePasteAutoSplit()">Auto-split into cards</button>' +
+        '<div style="margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.25rem;">';
+      if (key) {
+        html += '<button class="btn btn-ghost btn-block" onclick="handlePasteAI()">Use AI to extract cards</button>' +
+          '<p style="font-size:0.75rem; color:var(--ink-soft); text-align:center; margin:0.4rem 0 0;">Sends your pasted text to ' + (getAIProvider() === 'gemini' ? "Google's Gemini API" : 'your configured AI provider') + '</p>' +
+          '<p style="text-align:center; margin-top:0.5rem;"><button class="btn-text" onclick="ui.aiSettingsOpen=!ui.aiSettingsOpen; render()">AI settings</button></p>';
+      } else {
+        html += '<p style="font-size:0.85rem; color:var(--ink-soft); margin-bottom:0.75rem;">For messier notes, you can optionally use AI to extract cards — needs a free API key and an internet connection just for that step.</p>' +
+          '<button class="btn btn-ghost btn-block" onclick="ui.aiSettingsOpen=!ui.aiSettingsOpen; render()">Set up free AI parsing</button>';
+      }
+      html += '</div>';
+      if (ui.aiSettingsOpen) html += aiSettingsHTML();
+    } else {
+      html += '<h2>Import a deck</h2>' +
+        '<div class="dropzone" id="dropzone" onclick="document.getElementById(\'csv-input\').click()" ' +
+        'ondragover="event.preventDefault(); this.classList.add(\'dragover\')" ' +
+        'ondragleave="this.classList.remove(\'dragover\')" ondrop="handleDrop(event)">' +
+        '<div class="icon-wrap">' + ICONS.upload + '</div>' +
+        '<p><strong>Choose a CSV file</strong> or drag one here</p>' +
+        '<p>Two columns — a term and a definition. The first row can be a header or your first card; Recall figures out which.</p>' +
+        '</div><input type="file" id="csv-input" accept=".csv,text/csv" class="visually-hidden" onchange="handleCSVInput(this.files[0])">' +
+        '<p style="text-align:center; margin-top:1rem;"><button class="btn-text" onclick="ui.pasteMode=true; render()">Or paste notes instead</button></p>';
+    }
+  } else {
+    const rows = ui.importParsed;
+    const existingOptions = appState.decks.map(d => '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>').join('');
+    html += '<h2>Review import</h2><div class="import-preview"><p class="import-preview-count">' + rows.length + ' card' + (rows.length === 1 ? '' : 's') + ' found</p>';
+    if (ui.pasteSkipped) html += '<p style="font-size:0.8rem; color:var(--ink-soft); margin:-0.5rem 0 0.75rem;">' + ui.pasteSkipped + ' line' + (ui.pasteSkipped === 1 ? '' : 's') + " didn't match and were skipped.</p>";
+    rows.slice(0, 4).forEach(r => { html += '<div class="preview-row"><span>' + escapeHtml(r[0]) + '</span><span>' + escapeHtml(r[1] || '') + '</span></div>'; });
+    if (rows.length > 4) html += '<div class="preview-row"><span>+ ' + (rows.length - 4) + ' more</span></div>';
+    html += '</div>' +
+      '<div class="field" style="margin-top:1.25rem;"><label>Add to</label>' +
+      '<select id="import-target" onchange="document.getElementById(\'new-name-field\').style.display = this.value===\'__new__\' ? \'block\':\'none\'">' +
+      '<option value="__new__">Create new deck</option>' + existingOptions + '</select></div>' +
+      '<div class="field" id="new-name-field"><label>Deck name</label>' +
+      '<input type="text" id="import-deck-name" value="' + escapeHtml(uniqueDeckName(ui.importFileName || 'New deck')) + '"></div>' +
+      '<div style="display:flex; gap:0.75rem;"><button class="btn btn-ghost" onclick="goImport()">Cancel</button>' +
+      '<button class="btn btn-primary" style="flex:1;" onclick="confirmImport()">Add ' + rows.length + ' card' + (rows.length === 1 ? '' : 's') + '</button></div>';
+  }
+  html += '</div>';
+  return html;
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleCSVInput(file);
+}
+function handleCSVInput(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      let rows = parseCSV(String(reader.result));
+      if (rows.length && looksLikeHeader(rows[0])) rows = rows.slice(1);
+      rows = rows.filter(r => r[0] && r[0].trim()).map(r => [r[0], r[1] || '']);
+      if (rows.length === 0) { showToast('No cards found in that file.'); return; }
+      ui.importParsed = rows;
+      ui.importFileName = file.name.replace(/\.csv$/i, '');
+      ui.pasteSkipped = 0;
+      render();
+    } catch (err) { showToast("Couldn't read that file — make sure it's a CSV."); }
+  };
+  reader.onerror = () => showToast("Couldn't read that file.");
+  reader.readAsText(file);
+}
+function confirmImport() {
+  const target = document.getElementById('import-target').value;
+  const rows = ui.importParsed;
+  const newCards = rows.map(r => Object.assign({ id: generateId(), front: r[0], back: r[1] }, initSchedule()));
+  if (target === '__new__') {
+    const nameInput = document.getElementById('import-deck-name').value.trim() || 'New deck';
+    appState.decks.push({ id: generateId(), name: uniqueDeckName(nameInput), createdAt: Date.now(), cards: newCards, frontLang: '', backLang: '' });
+  } else {
+    getDeck(target).cards.push.apply(getDeck(target).cards, newCards);
+  }
+  saveState();
+  showToast('Added ' + newCards.length + ' card' + (newCards.length === 1 ? '' : 's'));
+  ui.importParsed = null;
+  goDashboard();
+}
+
+// ---------------------------------------------------------------------
+// Study
+// ---------------------------------------------------------------------
+function startStudy(deckId, includeAll) {
+  if (ttsSupported) window.speechSynthesis.cancel();
+  const deck = getDeck(deckId);
+  if (!deck) return;
+  const pool = includeAll ? deck.cards : deck.cards.filter(isDue);
+  const ids = pool.map(c => c.id);
+  ui.session = { deckId: deckId, queue: deck.sequential ? ids : shuffle(ids), pos: 0, flipped: false, reviewed: 0 };
+  ui.view = 'study';
+  render();
+}
+function startWeakCards(deckId) {
+  if (ttsSupported) window.speechSynthesis.cancel();
+  const deck = getDeck(deckId);
+  if (!deck) return;
+  const reviewed = deck.cards.filter(function (c) { return !!c.lastReviewed; });
+  if (reviewed.length < 3) { showToast('Weak cards ranks by how you\'ve done in Study mode specifically — grade a few cards there first.'); return; }
+  const sorted = reviewed.slice().sort(function (a, b) { return (a.easeFactor || 2.5) - (b.easeFactor || 2.5); });
+  const pool = sorted.slice(0, Math.min(10, sorted.length));
+  const ids = pool.map(function (c) { return c.id; });
+  ui.session = { deckId: deckId, queue: deck.sequential ? ids : shuffle(ids), pos: 0, flipped: false, reviewed: 0 };
+  ui.view = 'study';
+  render();
+}
+function setDeckSequential(deckId, val) {
+  const deck = getDeck(deckId);
+  deck.sequential = val;
+  saveState();
+}
+function studyHTML() {
+  const s = ui.session;
+  const deck = getDeck(s.deckId);
+  if (!deck) { ui.view = 'dashboard'; return dashboardHTML(); }
+
+  if (s.queue.length === 0) {
+    return '<div class="session-end"><h2>Nothing due right now</h2>' +
+      '<p>Every card in ' + escapeHtml(deck.name) + ' is scheduled for later.</p>' +
+      '<div class="btn-row"><button class="btn btn-ghost" onclick="goDashboard()">Back to decks</button>' +
+      (deck.cards.length ? '<button class="btn btn-primary" onclick="startStudy(\'' + deck.id + '\', true)">Practice all cards anyway</button>' : '') +
+      '</div></div>';
+  }
+  if (s.pos >= s.queue.length) {
+    return '<div class="session-end"><h2>Session complete</h2>' +
+      '<p>You reviewed ' + s.reviewed + ' card' + (s.reviewed === 1 ? '' : 's') + ' in ' + escapeHtml(deck.name) + '.</p>' +
+      '<div class="btn-row"><button class="btn btn-primary" onclick="goDashboard()">Back to decks</button></div></div>';
+  }
+
+  const card = deck.cards.find(c => c.id === s.queue[s.pos]);
+  const pct = Math.round((s.pos / s.queue.length) * 100);
+
+  return '<div class="study-topline"><span>' + escapeHtml(deck.name) + '</span><span>' + (s.pos + 1) + ' / ' + s.queue.length + '</span></div>' +
+    '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+    '<div class="study-card-area' + (s.flipped ? ' flipped' : '') + '">' +
+    '<div class="card-stage"><div class="flashcard" onclick="flipCard()"><div class="flashcard-inner">' +
+    '<div class="card-face card-front">' + (deck.frontLang ? '<button class="speak-btn" data-text="' + escapeHtml(card.front) + '" data-lang="' + deck.frontLang + '" onclick="event.stopPropagation(); speak(this.dataset.text, this.dataset.lang)" aria-label="Hear this word">' + ICONS.speaker + '</button>' : '') + '<div class="card-face-content">' + escapeHtml(card.front) + '</div></div>' +
+    '<div class="card-face card-back">' + (deck.backLang ? '<button class="speak-btn" data-text="' + escapeHtml(card.back) + '" data-lang="' + deck.backLang + '" onclick="event.stopPropagation(); speak(this.dataset.text, this.dataset.lang)" aria-label="Hear this word">' + ICONS.speaker + '</button>' : '') + '<div class="card-face-content">' + escapeHtml(card.back) + '</div></div>' +
+    '</div></div></div>' +
+    '<p class="flip-hint">Tap the card to reveal the answer <span class="kbd-hint">· Space</span></p>' +
+    '<div class="grade-row">' +
+    '<button class="grade-btn grade-again" onclick="gradeCard(0)">Again<span class="interval">' + formatInterval(previewInterval(card, 0)) + '</span></button>' +
+    '<button class="grade-btn grade-hard" onclick="gradeCard(3)">Hard<span class="interval">' + formatInterval(previewInterval(card, 3)) + '</span></button>' +
+    '<button class="grade-btn grade-good" onclick="gradeCard(4)">Good<span class="interval">' + formatInterval(previewInterval(card, 4)) + '</span></button>' +
+    '<button class="grade-btn grade-easy" onclick="gradeCard(5)">Easy<span class="interval">' + formatInterval(previewInterval(card, 5)) + '</span></button>' +
+    '</div></div>';
+}
+function flipCard() {
+  if (!ui.session || ui.session.pos >= ui.session.queue.length) return;
+  ui.session.flipped = !ui.session.flipped;
+  const area = document.querySelector('.study-card-area');
+  if (area) area.classList.toggle('flipped', ui.session.flipped);
+}
+function gradeCard(quality) {
+  if (ttsSupported) window.speechSynthesis.cancel();
+  const s = ui.session;
+  const deck = getDeck(s.deckId);
+  const card = deck.cards.find(c => c.id === s.queue[s.pos]);
+  scheduleNext(card, quality);
+  s.reviewed++; s.pos++; s.flipped = false;
+  recordStudyActivity();
+  saveState();
+  render();
+}
+document.addEventListener('keydown', function (e) {
+  if (ui.view === 'study' && ui.session && ui.session.pos < ui.session.queue.length) {
+    if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!ui.session.flipped) flipCard(); }
+    else if (ui.session.flipped) {
+      if (e.key === '1') gradeCard(0);
+      else if (e.key === '2') gradeCard(3);
+      else if (e.key === '3') gradeCard(4);
+      else if (e.key === '4') gradeCard(5);
+    }
+  } else if (ui.view === 'learn' && ui.learnSession && !ui.learnSession.finished && !ui.learnSession.allMastered) {
+    const s = ui.learnSession;
+    if (!s.feedback) {
+      if (s.questionType === 'choice' && ['1', '2', '3', '4'].indexOf(e.key) !== -1) {
+        const idx = parseInt(e.key, 10) - 1;
+        if (s.choiceOptions[idx] !== undefined) answerLearnChoice(s.deckId, s.choiceOptions[idx]);
+      }
+    } else if (e.key === 'Enter') {
+      continueLearn();
+    }
+  }
+});
+
+// ---------------------------------------------------------------------
+// Match / Learn / Free Fall views
+// ---------------------------------------------------------------------
+function matchHTML() {
+  const s = ui.matchSession;
+  const deck = getDeck(s.deckId);
+  if (!deck) { ui.view = 'dashboard'; return dashboardHTML(); }
+
+  if (s.finished) {
+    const secs = (s.finalTimeMs / 1000).toFixed(1);
+    return '<div class="session-end"><h2>' + (s.isRecord ? 'New best time!' : 'Board cleared') + '</h2>' +
+      '<p>You matched ' + s.totalPairs + ' pairs in ' + secs + 's' + (deck.matchBest && !s.isRecord ? ' — best is ' + (deck.matchBest / 1000).toFixed(1) + 's' : '') + '.</p>' +
+      '<div class="btn-row"><button class="btn btn-ghost" onclick="goDashboard()">Back to decks</button>' +
+      '<button class="btn btn-primary" onclick="startMatch(\'' + deck.id + '\')">Play again</button></div></div>';
+  }
+
+  let tilesHTML = '';
+  s.tiles.forEach(function (t, i) {
+    tilesHTML += '<button class="match-tile' + (t.matched ? ' matched' : '') + '" data-index="' + i + '" onclick="tapMatchTile(' + i + ')">' + escapeHtml(t.text) + '</button>';
+  });
+
+  return '<div class="match-topline"><span>' + escapeHtml(deck.name) + '</span><span class="match-timer" id="match-timer">0.0s</span></div>' +
+    '<div class="match-grid">' + tilesHTML + '</div>';
+}
+
+function learnHTML() {
+  const s = ui.learnSession;
+  const deck = getDeck(s.deckId);
+  if (!deck) { ui.view = 'dashboard'; return dashboardHTML(); }
+
+  if (s.allMastered) {
+    return '<div class="session-end"><h2>Already mastered</h2>' +
+      '<p>Every card in ' + escapeHtml(deck.name) + ' has been mastered in Learn.</p>' +
+      '<div class="btn-row"><button class="btn btn-ghost" onclick="goDashboard()">Back to decks</button>' +
+      '<button class="btn btn-primary" onclick="resetLearnProgress(\'' + deck.id + '\')">Reset Learn progress</button></div></div>';
+  }
+  if (s.finished) {
+    return '<div class="session-end"><h2>Round complete</h2>' +
+      '<p>You\'ve mastered all ' + learnMasteredCount(deck) + ' cards in ' + escapeHtml(deck.name) + ' for Learn.</p>' +
+      '<div class="btn-row"><button class="btn btn-primary" onclick="goDashboard()">Back to decks</button></div></div>';
+  }
+
+  const card = deck.cards.find(function (c) { return c.id === s.currentCardId; });
+  const mastered = learnMasteredCount(deck);
+  const pct = Math.round((mastered / deck.cards.length) * 100);
+
+  let html = '<div class="study-topline"><span>' + escapeHtml(deck.name) + '</span><span>' + mastered + ' / ' + deck.cards.length + ' mastered</span></div>' +
+    '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+    '<div class="learn-prompt-label">' + (s.questionType === 'written' ? 'Type the answer' : 'Choose the answer') + '</div>' +
+    '<div class="learn-prompt">' + escapeHtml(card.front) + '</div>';
+
+  if (!s.feedback) {
+    if (s.questionType === 'choice') {
+      html += '<div class="learn-options">';
+      s.choiceOptions.forEach(function (opt) {
+        html += '<button class="learn-option" data-text="' + escapeHtml(opt) + '" onclick="answerLearnChoice(\'' + deck.id + '\', this.dataset.text)">' + escapeHtml(opt) + '</button>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="field"><input type="text" id="learn-written-input" placeholder="Type your answer" autocomplete="off" autofocus onkeydown="if(event.key===\'Enter\') submitLearnWritten(\'' + deck.id + '\')"></div>' +
+        '<button class="btn btn-primary btn-block" onclick="submitLearnWritten(\'' + deck.id + '\')">Check</button>';
+    }
+  } else {
+    const f = s.feedback;
+    if (s.questionType === 'choice') {
+      html += '<div class="learn-options">';
+      s.choiceOptions.forEach(function (opt) {
+        let cls = 'learn-option locked';
+        if (opt === f.correctText) cls += ' option-correct';
+        else if (opt === f.pickedText) cls += ' option-wrong';
+        html += '<button class="' + cls + '" disabled>' + escapeHtml(opt) + '</button>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="field"><input type="text" value="' + escapeHtml(f.pickedText) + '" disabled></div>';
+    }
+    html += '<div class="learn-feedback ' + (f.correct ? 'is-correct' : 'is-wrong') + '">' +
+      (f.correct ? (f.overridden ? 'Marked correct' : (f.accentNote ? 'Correct! (mind the accent: ' + escapeHtml(f.correctText) + ')' : 'Correct!')) : ('Not quite — the answer is "' + escapeHtml(f.correctText) + '"')) +
+      '</div>';
+    if (!f.correct) {
+      html += '<div class="learn-override-row"><button class="btn-text" onclick="overrideLearnCorrect(\'' + deck.id + '\')">I was actually right</button></div>';
+    }
+    html += '<button class="btn btn-primary btn-block" style="margin-top:0.25rem;" onclick="continueLearn()">Continue</button>';
+  }
+  return html;
+}
+
+function freefallHTML() {
+  const s = ui.freefallSession;
+  const deck = getDeck(s.deckId);
+  if (!deck) { ui.view = 'dashboard'; return dashboardHTML(); }
+
+  if (s.finished) {
+    return '<div class="session-end"><h2>' + (s.isRecord && s.score > 0 ? 'New high score!' : 'Game over') + '</h2>' +
+      '<p>You cleared ' + s.score + ' term' + (s.score === 1 ? '' : 's') + ' in ' + escapeHtml(deck.name) + (deck.freefallBest && !s.isRecord ? ' — best is ' + deck.freefallBest : '') + '.</p>' +
+      '<div class="btn-row"><button class="btn btn-ghost" onclick="goDashboard()">Back to decks</button>' +
+      '<button class="btn btn-primary" onclick="startFreefall(\'' + deck.id + '\')">Play again</button></div></div>';
+  }
+
+  const card = deck.cards.find(function (c) { return c.id === s.currentCardId; });
+  let hearts = '';
+  for (let i = 0; i < FREEFALL_START_LIVES; i++) hearts += (i < s.lives ? '♥' : '♡');
+
+  return '<div class="study-topline"><span>' + escapeHtml(deck.name) + '</span><span class="lives">' + hearts + '&nbsp;&nbsp;Score ' + s.score + '</span></div>' +
+    '<div class="fallzone"><div class="fall-tile" style="animation-duration:' + s.duration + 's" onanimationend="freefallTileLanded(' + s.tileVersion + ')">' + escapeHtml(card.front) + '</div></div>' +
+    '<div class="field"><input type="text" id="freefall-input" placeholder="Type the answer" autocomplete="off" autofocus onkeydown="if(event.key===\'Enter\') submitFreefall(\'' + deck.id + '\')"></div>' +
+    '<button class="btn btn-primary btn-block" onclick="submitFreefall(\'' + deck.id + '\')">Submit</button>';
+}
+
+// ---------------------------------------------------------------------
+// Manage
+// ---------------------------------------------------------------------
+function reRenderPreservingFocus() {
+  const active = document.activeElement;
+  const id = active && active.id;
+  const selStart = active && typeof active.selectionStart === 'number' ? active.selectionStart : null;
+  const selEnd = active && typeof active.selectionEnd === 'number' ? active.selectionEnd : null;
+  render();
+  if (id) {
+    const el = document.getElementById(id);
+    if (el && el.focus) {
+      el.focus();
+      if (selStart !== null && el.setSelectionRange) { try { el.setSelectionRange(selStart, selEnd); } catch (e) {} }
+    }
+  }
+}
+function manageHTML() {
+  const deck = getDeck(ui.manageDeckId);
+  if (!deck) { ui.view = 'dashboard'; return dashboardHTML(); }
+  const due = deck.cards.filter(isDue).length;
+  const query = ui.manageQuery.toLowerCase().trim();
+  const cards = deck.cards.filter(c => !query || c.front.toLowerCase().includes(query) || c.back.toLowerCase().includes(query));
+
+  let html = '<input type="text" class="manage-title-input" value="' + escapeHtml(deck.name) + '" ' +
+    'onblur="renameDeck(\'' + deck.id + '\', this.value)" onkeydown="if(event.key===\'Enter\') this.blur()">' +
+    '<p class="manage-meta">' + deck.cards.length + ' card' + (deck.cards.length === 1 ? '' : 's') + ' · ' + due + ' due' +
+    (learnMasteredCount(deck) > 0 ? ' · ' + learnMasteredCount(deck) + '/' + deck.cards.length + ' mastered in Learn' : '') + '</p>';
+
+  if (deck.cards.length === 0) {
+    if (!ui.addingCard) html += '<button class="btn btn-ghost btn-block" onclick="ui.addingCard=true; render()">Add your first card</button>';
+  } else if (due > 0) {
+    html += '<button class="btn btn-primary btn-block" onclick="startStudy(\'' + deck.id + '\', false)">Study now (' + due + ')</button>';
+  } else {
+    const nextDue = deck.cards.reduce(function (min, c) { return (!min || c.dueDate < min) ? c.dueDate : min; }, null);
+    html += '<p style="text-align:center; font-size:0.85rem; color:var(--ink-soft); margin:0.5rem 0 0.75rem;">Nothing due right now — next card ready ' + formatDateHuman(nextDue) + '.</p>' +
+      '<button class="btn btn-ghost btn-block" onclick="startStudy(\'' + deck.id + '\', true)">Practice all cards anyway</button>';
+  }
+
+  if (deck.cards.length > 1) {
+    html += '<label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; color:var(--ink-soft); margin:0.6rem 0 0;">' +
+      '<input type="checkbox" ' + (deck.sequential ? 'checked' : '') + ' onchange="setDeckSequential(\'' + deck.id + '\', this.checked)"> Study in list order (don\'t shuffle)</label>';
+  }
+
+  if (deck.cards.length > 0) {
+    html += '<div style="display:flex; gap:0.6rem; margin-top:0.6rem; flex-wrap:wrap;">' +
+      '<button class="btn btn-ghost" style="flex:1; min-width:88px;" onclick="startLearn(\'' + deck.id + '\')">Learn</button>' +
+      '<button class="btn btn-ghost" style="flex:1; min-width:88px;" onclick="startMatch(\'' + deck.id + '\')">Match</button>' +
+      '<button class="btn btn-ghost" style="flex:1; min-width:88px;" onclick="startFreefall(\'' + deck.id + '\')">Free Fall</button>' +
+      '<button class="btn btn-ghost" style="flex:1; min-width:88px;" onclick="startWeakCards(\'' + deck.id + '\')">Weak cards</button>' +
+      '</div>';
+  }
+
+  if (ttsSupported) {
+    html += '<div class="tts-settings">' +
+      '<div class="tts-field"><label>Front audio (tap-to-hear on the front of each card)</label><div class="tts-field-row">' +
+      '<select onchange="setDeckLang(\'' + deck.id + '\',\'front\',this.value)">' + langOptionsHTML(deck.frontLang) + '</select>' +
+      (deck.frontLang ? '<button class="tts-test-btn" onclick="testDeckVoice(\'' + deck.id + '\',\'front\')" aria-label="Test voice">' + ICONS.speaker + '</button>' : '') +
+      '</div></div>' +
+      '<div class="tts-field"><label>Back audio</label><div class="tts-field-row">' +
+      '<select onchange="setDeckLang(\'' + deck.id + '\',\'back\',this.value)">' + langOptionsHTML(deck.backLang) + '</select>' +
+      (deck.backLang ? '<button class="tts-test-btn" onclick="testDeckVoice(\'' + deck.id + '\',\'back\')" aria-label="Test voice">' + ICONS.speaker + '</button>' : '') +
+      '</div></div>' +
+      '</div>';
+  }
+
+  html += '<div class="footer-links" style="margin:1rem 0 1.5rem;">' +
+    '<button class="btn-text" onclick="exportDeckCSV(\'' + deck.id + '\')">Export as CSV</button>' +
+    '<button class="btn-text btn-danger-text" onclick="deleteDeck(\'' + deck.id + '\')">Delete deck</button></div>';
+
+  if (deck.cards.length > 0) {
+    html += '<div style="display:flex; gap:0.5rem; margin-bottom:' + (ui.selectMode ? '0.75rem' : '1rem') + ';">' +
+      '<input type="text" id="manage-search" class="search-input" style="margin-bottom:0;" placeholder="Search cards" value="' + escapeHtml(ui.manageQuery) + '" oninput="ui.manageQuery=this.value; reRenderPreservingFocus()">' +
+      '<button class="btn btn-ghost btn-sm" style="flex-shrink:0;" onclick="ui.selectMode=!ui.selectMode; ui.selectedCardIds=[]; render()">' + (ui.selectMode ? 'Done' : 'Select') + '</button>' +
+      '</div>';
+  }
+  if (ui.selectMode) {
+    html += '<div class="notice-banner" style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">' +
+      '<span>' + ui.selectedCardIds.length + ' selected</span>' +
+      '<div style="display:flex; gap:0.75rem; align-items:center;">' +
+      '<button class="btn-text" style="padding:0;" onclick="selectAllVisible(\'' + deck.id + '\')">Select all shown</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="createSubdeckFromSelection(\'' + deck.id + '\')">Create sub-deck</button>' +
+      '</div></div>';
+  }
+
+  html += '<div class="card-list">';
+  cards.forEach(card => {
+    if (ui.selectMode) {
+      const checked = ui.selectedCardIds.indexOf(card.id) !== -1;
+      html += '<label class="card-row" style="display:flex; align-items:flex-start; gap:0.75rem; cursor:pointer;">' +
+        '<input type="checkbox" style="margin-top:0.2rem; flex-shrink:0;" ' + (checked ? 'checked' : '') + ' onchange="toggleCardSelect(\'' + card.id + '\')">' +
+        '<div class="card-row-text"><p class="card-row-front">' + escapeHtml(card.front) + '</p><p class="card-row-back">' + escapeHtml(card.back) + '</p></div>' +
+        '</label>';
+    } else if (ui.editingCardId === card.id) {
+      html += '<div class="card-row">' +
+        '<div class="field" style="margin-bottom:0.6rem;"><textarea id="edit-front-' + card.id + '">' + escapeHtml(card.front) + '</textarea></div>' +
+        '<div class="field" style="margin-bottom:0;"><textarea id="edit-back-' + card.id + '">' + escapeHtml(card.back) + '</textarea></div>' +
+        '<div class="card-edit-actions"><button class="btn-text" onclick="ui.editingCardId=null; render()">Cancel</button>' +
+        '<button class="btn btn-primary btn-sm" onclick="saveCardEdit(\'' + deck.id + '\',\'' + card.id + '\')">Save</button></div></div>';
+    } else {
+      html += '<div class="card-row"><div class="card-row-view"><div class="card-row-text">' +
+        '<p class="card-row-front">' + escapeHtml(card.front) + '</p>' +
+        '<p class="card-row-back">' + escapeHtml(card.back) + '</p>' +
+        '<p class="card-row-due">' + (isDue(card) ? 'Due now' : 'Due ' + formatDateHuman(card.dueDate)) + '</p></div>' +
+        '<div class="card-row-actions"><button class="icon-btn" onclick="ui.editingCardId=\'' + card.id + '\'; render()" aria-label="Edit">' + ICONS.edit + '</button>' +
+        '<button class="icon-btn" onclick="deleteCard(\'' + deck.id + '\',\'' + card.id + '\')" aria-label="Delete">' + ICONS.trash + '</button></div></div></div>';
+    }
+  });
+  html += '</div>';
+
+  if (ui.addingCard) {
+    html += '<div class="add-card-panel"><div class="field"><label>Term</label><textarea id="new-card-front" placeholder="Front of card"></textarea></div>' +
+      '<div class="field" style="margin-bottom:0;"><label>Definition</label><textarea id="new-card-back" placeholder="Back of card"></textarea></div>' +
+      '<div class="card-edit-actions"><button class="btn-text" onclick="ui.addingCard=false; render()">Done</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="submitNewCard(\'' + deck.id + '\')">Add card</button></div></div>';
+  } else {
+    html += '<button class="btn btn-ghost btn-block" style="margin-top:0.5rem;" onclick="ui.addingCard=true; render()">' + ICONS.plus + 'Add a card</button>';
+  }
+  return html;
+}
+function renameDeck(deckId, name) {
+  const deck = getDeck(deckId);
+  const trimmed = name.trim();
+  if (trimmed && trimmed !== deck.name) { deck.name = trimmed; saveState(); }
+  render();
+}
+function deleteDeck(deckId) {
+  const deck = getDeck(deckId);
+  if (!confirm('Delete "' + deck.name + '" and all ' + deck.cards.length + ' cards? This can\'t be undone.')) return;
+  appState.decks = appState.decks.filter(d => d.id !== deckId);
+  saveState();
+  goDashboard();
+}
+function toggleCardSelect(cardId) {
+  const idx = ui.selectedCardIds.indexOf(cardId);
+  if (idx === -1) ui.selectedCardIds.push(cardId); else ui.selectedCardIds.splice(idx, 1);
+  render();
+}
+function selectAllVisible(deckId) {
+  const deck = getDeck(deckId);
+  const query = ui.manageQuery.toLowerCase().trim();
+  const visible = deck.cards.filter(function (c) { return !query || c.front.toLowerCase().indexOf(query) !== -1 || c.back.toLowerCase().indexOf(query) !== -1; });
+  ui.selectedCardIds = visible.map(function (c) { return c.id; });
+  render();
+}
+function createSubdeckFromSelection(deckId) {
+  const deck = getDeck(deckId);
+  const selected = deck.cards.filter(function (c) { return ui.selectedCardIds.indexOf(c.id) !== -1; });
+  if (selected.length === 0) { showToast('Select at least one card first.'); return; }
+  const newCards = selected.map(function (c) { return Object.assign({ id: generateId(), front: c.front, back: c.back }, initSchedule()); });
+  const newDeck = { id: generateId(), name: uniqueDeckName(deck.name + ' — selection'), createdAt: Date.now(), cards: newCards, frontLang: deck.frontLang || '', backLang: deck.backLang || '' };
+  appState.decks.push(newDeck);
+  saveState();
+  showToast('Created "' + newDeck.name + '" with ' + newCards.length + ' card' + (newCards.length === 1 ? '' : 's'));
+  openDeck(newDeck.id);
+}
+function saveCardEdit(deckId, cardId) {
+  const deck = getDeck(deckId);
+  const card = deck.cards.find(c => c.id === cardId);
+  const front = document.getElementById('edit-front-' + cardId).value.trim();
+  const back = document.getElementById('edit-back-' + cardId).value.trim();
+  if (!front) { showToast('A card needs a term.'); return; }
+  card.front = front; card.back = back;
+  ui.editingCardId = null;
+  saveState();
+  render();
+}
+function deleteCard(deckId, cardId) {
+  const deck = getDeck(deckId);
+  const card = deck.cards.find(c => c.id === cardId);
+  if (!card) return;
+  if (!confirm('Delete "' + card.front + '"? This can\'t be undone.')) return;
+  deck.cards = deck.cards.filter(c => c.id !== cardId);
+  saveState();
+  render();
+}
+function submitNewCard(deckId) {
+  const deck = getDeck(deckId);
+  const front = document.getElementById('new-card-front').value.trim();
+  const back = document.getElementById('new-card-back').value.trim();
+  if (!front) { showToast('A card needs a term.'); return; }
+  deck.cards.push(Object.assign({ id: generateId(), front: front, back: back }, initSchedule()));
+  saveState();
+  render();
+  const frontEl = document.getElementById('new-card-front');
+  if (frontEl) frontEl.focus();
+}
+
+// ---------------------------------------------------------------------
+// Export / backup
+// ---------------------------------------------------------------------
+function exportDeckCSV(deckId) {
+  const deck = getDeck(deckId);
+  const csv = deck.cards.map(c => csvEscapeField(c.front) + ',' + csvEscapeField(c.back)).join('\r\n');
+  downloadBlob(deck.name + '.csv', csv, 'text/csv');
+  showToast('CSV downloaded');
+}
+function exportBackup() {
+  downloadBlob('recall-backup-' + todayISO() + '.json', JSON.stringify(appState, null, 2), 'application/json');
+  showToast('Backup downloaded');
+}
+function handleRestoreFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(String(reader.result));
+      if (!parsed || !Array.isArray(parsed.decks)) throw new Error('bad shape');
+      if (!confirm('Restore this backup? It has ' + parsed.decks.length + ' deck(s) and will replace everything currently saved.')) return;
+      appState = parsed;
+      if (!appState.streak) appState.streak = { count: 0, lastStudyDate: null, longest: 0 };
+      saveState();
+      showToast('Backup restored');
+      goDashboard();
+    } catch (e) { showToast("That doesn't look like a Recall backup file."); }
+  };
+  reader.readAsText(file);
+}
+
+// ---------------------------------------------------------------------
+// Toast
+// ---------------------------------------------------------------------
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+// ---------------------------------------------------------------------
+// Reminders (best-effort, in-browser only)
+// ---------------------------------------------------------------------
+function toggleReminders() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') { showToast('Reminders are already on.'); return; }
+  if (Notification.permission === 'denied') { showToast('Reminders are blocked in your browser settings.'); return; }
+  Notification.requestPermission().then(perm => {
+    if (perm === 'granted') { showToast('Reminders on'); checkAndNotify(true); }
+    render();
+  });
+}
+function checkAndNotify(force) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const totalDue = appState.decks.reduce((s, d) => s + d.cards.filter(isDue).length, 0);
+  if (totalDue === 0) return;
+  const lastNotified = storageAvailable ? localStorage.getItem('recall_last_notified') : null;
+  if (!force && lastNotified === todayISO()) return;
+  try {
+    new Notification('Recall', { body: totalDue + ' card' + (totalDue === 1 ? '' : 's') + ' due today.' });
+    if (storageAvailable) localStorage.setItem('recall_last_notified', todayISO());
+  } catch (e) {}
+}
+
+// ---------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------
+render();
+setTimeout(() => checkAndNotify(false), 1200);
+</script>
+</body>
+</html>
