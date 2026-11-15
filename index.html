@@ -314,9 +314,22 @@ textarea { line-height: 1.4; }
 @media (prefers-reduced-motion: reduce) {
   .flashcard-inner, .match-tile { transition: none !important; }
 }
+.folder-head { display: flex; align-items: center; border-bottom: 1px solid var(--border); }
+.folder-row { flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.7rem; padding: 0.95rem 0.25rem; border: none; background: none; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+.folder-icon { color: var(--accent); display: flex; flex-shrink: 0; }
+.folder-name { flex: 1; min-width: 0; font-weight: 600; font-size: 1.05rem; }
+.folder-chevron { display: flex; color: var(--ink-soft); transition: transform 0.15s; }
+.folder-chevron.open { transform: rotate(90deg); }
+.folder-body { margin-left: 0.7rem; padding-left: 0.9rem; border-left: 2px solid var(--accent-tint); }
+.modal-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(30, 42, 38, 0.5); }
+.modal { width: 100%; max-width: 26rem; max-height: 90vh; overflow: auto; padding: 1.25rem; border-radius: 14px; background: var(--paper-card); }
+.modal h3 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.modal p { margin: 0 0 1rem; font-size: 0.92rem; color: var(--ink-soft); }
+.modal-actions { display: flex; flex-direction: column; gap: 0.5rem; }
 </style>
 </head>
 <body>
+<input type="file" id="restore-input" class="visually-hidden" tabindex="-1" aria-hidden="true">
 <div id="app"></div>
 <div id="toast" class="toast" aria-live="polite"></div>
 <noscript>Recall needs JavaScript enabled to run.</noscript>
@@ -325,6 +338,7 @@ textarea { line-height: 1.4; }
 // Icons
 // ---------------------------------------------------------------------
 const ICONS = {
+  folder: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
   plus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   trash: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/></svg>',
   edit: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
@@ -350,25 +364,48 @@ function testStorage() {
 const storageAvailable = testStorage();
 
 function defaultState() {
-  return { decks: [], streak: { count: 0, lastStudyDate: null, longest: 0 } };
+  return { decks: [], folders: [], streak: { count: 0, lastStudyDate: null, longest: 0 } };
+}
+
+// Cleans any saved or restored data so a malformed file can never break the app.
+function normalizeState(raw) {
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.decks)) throw new Error("That file doesn't contain any Recall decks.");
+  const used = new Set();
+  const uid = function (id) {
+    if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(id) || used.has(id)) id = generateId();
+    used.add(id);
+    return id;
+  };
+  const folders = (Array.isArray(raw.folders) ? raw.folders : []).filter(function (f) { return f && typeof f === 'object'; }).map(function (f) {
+    return Object.assign({}, f, { id: uid(f.id), name: String(f.name || 'Untitled folder'), collapsed: !!f.collapsed });
+  });
+  const folderIds = new Set(folders.map(function (f) { return f.id; }));
+  const decks = raw.decks.filter(function (d) { return d && typeof d === 'object'; }).map(function (d) {
+    const cards = (Array.isArray(d.cards) ? d.cards : []).filter(function (c) { return c && typeof c === 'object' && c.front != null; }).map(function (c) {
+      const card = Object.assign(initSchedule(), c, { id: uid(c.id), front: String(c.front), back: String(c.back == null ? '' : c.back) });
+      if (typeof card.dueDate !== 'string') card.dueDate = todayISO();
+      return card;
+    });
+    return Object.assign({ frontLang: '', backLang: '' }, d, { id: uid(d.id), name: String(d.name || 'Untitled deck'), cards: cards, folderId: folderIds.has(d.folderId) ? d.folderId : null });
+  });
+  return Object.assign({}, raw, { decks: decks, folders: folders, streak: Object.assign({ count: 0, lastStudyDate: null, longest: 0 }, raw.streak) });
 }
 
 function loadState() {
   if (!storageAvailable) return defaultState();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.decks)) return defaultState();
-    if (!parsed.streak) parsed.streak = { count: 0, lastStudyDate: null, longest: 0 };
-    return parsed;
-  } catch (e) { return defaultState(); }
+    return raw ? normalizeState(JSON.parse(raw)) : defaultState();
+  } catch (e) {
+    try { const bad = localStorage.getItem(STORAGE_KEY); if (bad) localStorage.setItem(STORAGE_KEY + '_unreadable', bad); } catch (e2) {}
+    return defaultState();
+  }
 }
 
 function saveState() {
-  if (!storageAvailable) return;
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); }
-  catch (e) { showToast("Couldn't save — storage may be full or blocked."); }
+  if (!storageAvailable) return false;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); return true; }
+  catch (e) { showToast("Couldn't save — storage may be full or blocked."); return false; }
 }
 
 // ---------------------------------------------------------------------
@@ -848,7 +885,7 @@ function uniqueDeckName(name) {
 // Render
 // ---------------------------------------------------------------------
 function render() {
-  document.getElementById('app').innerHTML = topbarHTML() + '<div class="view-wrap">' + viewHTML() + '</div>';
+  document.getElementById('app').innerHTML = topbarHTML() + '<div class="view-wrap">' + viewHTML() + '</div>' + modalHTML();
 }
 function viewHTML() {
   if (ui.view === 'import') return importHTML();
@@ -875,7 +912,7 @@ function goDashboard() {
   if (ui.matchSession && ui.matchSession.intervalId) clearInterval(ui.matchSession.intervalId);
   ui.matchSession = null; ui.learnSession = null; ui.freefallSession = null;
   ui.view = 'dashboard'; ui.session = null; ui.importParsed = null;
-  ui.manageDeckId = null; ui.manageQuery = ''; ui.editingCardId = null; ui.addingCard = false; ui.creatingDeck = false;
+  ui.manageDeckId = null; ui.manageQuery = ''; ui.editingCardId = null; ui.addingCard = false; ui.creatingDeck = false; ui.creatingFolder = false; ui.editingFolderId = null;
   ui.selectMode = false; ui.selectedCardIds = [];
   render();
 }
@@ -912,7 +949,8 @@ function dashboardHTML() {
     html += '<div class="due-banner"><div class="due-banner-text">You\'re all caught up — nothing due right now.</div></div>';
   }
   html += '<div class="deck-list">';
-  appState.decks.forEach(deck => {
+  const renderDeckRow = deck => {
+    let html = '';
     const due = deck.cards.filter(isDue).length;
     const stage = deckStageBreakdown(deck);
     html += '<button class="deck-row" onclick="openDeck(\'' + deck.id + '\')">' +
@@ -923,18 +961,23 @@ function dashboardHTML() {
       '</span>' +
       (due > 0 ? '<span class="due-pill">' + due + '</span>' : '') +
       '<span class="deck-chevron">' + ICONS.chevron + '</span></button>';
-  });
+    return html;
+  };
+  appState.folders.forEach(function (f) { html += folderHTML(f, renderDeckRow); });
+  appState.decks.filter(function (d) { return !getFolder(d.folderId); }).forEach(function (d) { html += renderDeckRow(d); });
   html += '</div>';
-  if (ui.creatingDeck) {
+  if (ui.creatingFolder) {
+    html += '<div style="margin-top:1.5rem;">' + newFolderFormHTML() + '</div>';
+  } else if (ui.creatingDeck) {
     html += '<div style="margin-top:1.5rem;">' + newDeckFormHTML() + '</div>';
   } else {
     html += '<div style="display:flex; gap:0.75rem; margin-top:1.5rem;">' +
       '<button class="btn btn-ghost" style="flex:1;" onclick="goImport()">' + ICONS.plus + 'Import</button>' +
-      '<button class="btn btn-ghost" style="flex:1;" onclick="ui.creatingDeck=true; render()">' + ICONS.plus + 'Create</button></div>';
+      '<button class="btn btn-ghost" style="flex:1;" onclick="ui.creatingDeck=true; render()">' + ICONS.plus + 'Create</button>' +
+      '<button class="btn btn-ghost" style="flex:1;" onclick="ui.creatingFolder=true; render()">' + ICONS.folder + 'Folder</button></div>';
   }
   html += '<div class="footer-links"><button class="btn-text" onclick="exportBackup()">Back up all data</button>' +
-    '<button class="btn-text" onclick="document.getElementById(\'restore-input\').click()">Restore from backup</button>' +
-    '<input type="file" id="restore-input" accept="application/json,.json" class="visually-hidden" onchange="handleRestoreFile(this.files[0])"></div>';
+    '<label class="btn-text" for="restore-input" role="button" tabindex="0" style="cursor:pointer;" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();document.getElementById(\'restore-input\').click();}">Restore from backup</label></div>';
   return html;
 }
 
@@ -1526,6 +1569,7 @@ function manageHTML() {
     'onblur="renameDeck(\'' + deck.id + '\', this.value)" onkeydown="if(event.key===\'Enter\') this.blur()">' +
     '<p class="manage-meta">' + deck.cards.length + ' card' + (deck.cards.length === 1 ? '' : 's') + ' · ' + due + ' due' +
     (learnMasteredCount(deck) > 0 ? ' · ' + learnMasteredCount(deck) + '/' + deck.cards.length + ' mastered in Learn' : '') + '</p>';
+  html += deckFolderSelectHTML(deck);
 
   if (deck.cards.length === 0) {
     if (!ui.addingCard) html += '<button class="btn btn-ghost btn-block" onclick="ui.addingCard=true; render()">Add your first card</button>';
@@ -1648,7 +1692,7 @@ function createSubdeckFromSelection(deckId) {
   const selected = deck.cards.filter(function (c) { return ui.selectedCardIds.indexOf(c.id) !== -1; });
   if (selected.length === 0) { showToast('Select at least one card first.'); return; }
   const newCards = selected.map(function (c) { return Object.assign({ id: generateId(), front: c.front, back: c.back }, initSchedule()); });
-  const newDeck = { id: generateId(), name: uniqueDeckName(deck.name + ' — selection'), createdAt: Date.now(), cards: newCards, frontLang: deck.frontLang || '', backLang: deck.backLang || '' };
+  const newDeck = { id: generateId(), name: uniqueDeckName(deck.name + ' — selection'), createdAt: Date.now(), cards: newCards, frontLang: deck.frontLang || '', backLang: deck.backLang || '', folderId: deck.folderId || null };
   appState.decks.push(newDeck);
   saveState();
   showToast('Created "' + newDeck.name + '" with ' + newCards.length + ' card' + (newCards.length === 1 ? '' : 's'));
@@ -1696,25 +1740,150 @@ function exportDeckCSV(deckId) {
   showToast('CSV downloaded');
 }
 function exportBackup() {
-  downloadBlob('recall-backup-' + todayISO() + '.json', JSON.stringify(appState, null, 2), 'application/json');
+  const data = Object.assign({}, appState, { app: 'recall', version: 2, exportedAt: new Date().toISOString() });
+  downloadBlob('recall-backup-' + todayISO() + '.json', JSON.stringify(data, null, 2), 'application/json');
   showToast('Backup downloaded');
 }
 function handleRestoreFile(file) {
-  if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onerror = function () { showToast("Couldn't read that file. Try picking it again."); };
+  reader.onload = function () {
+    let incoming;
     try {
-      const parsed = JSON.parse(String(reader.result));
-      if (!parsed || !Array.isArray(parsed.decks)) throw new Error('bad shape');
-      if (!confirm('Restore this backup? It has ' + parsed.decks.length + ' deck(s) and will replace everything currently saved.')) return;
-      appState = parsed;
-      if (!appState.streak) appState.streak = { count: 0, lastStudyDate: null, longest: 0 };
-      saveState();
-      showToast('Backup restored');
-      goDashboard();
-    } catch (e) { showToast("That doesn't look like a Recall backup file."); }
+      const text = String(reader.result).replace(/^\uFEFF/, '').trim();
+      if (!text) throw new Error('That file is empty.');
+      let data;
+      try { data = JSON.parse(text); } catch (e) { throw new Error("That isn't a backup file. Pick the recall-backup .json file."); }
+      incoming = normalizeState(data);
+    } catch (e) { showToast(e.message); return; }
+    const n = incoming.decks.length, nf = incoming.folders.length;
+    const cards = incoming.decks.reduce(function (sum, d) { return sum + d.cards.length; }, 0);
+    const summary = n + ' deck' + (n === 1 ? '' : 's') + ', ' + cards + ' card' + (cards === 1 ? '' : 's') + (nf ? ', ' + nf + ' folder' + (nf === 1 ? '' : 's') : '') + ' in this backup. ';
+    showModal('Restore this backup?', summary + '"Replace everything" swaps your current decks for these. "Add missing decks" keeps what you have and adds only decks that aren\'t here yet.', [
+      { label: 'Replace everything', cls: 'btn-primary', fn: function () { applyRestore(incoming, false); } },
+      { label: 'Add missing decks', cls: 'btn-ghost', fn: function () { applyRestore(incoming, true); } },
+      { label: 'Cancel', cls: 'btn-ghost' }
+    ]);
   };
   reader.readAsText(file);
+}
+function applyRestore(incoming, merge) {
+  const prev = appState;
+  let next = incoming, added = 0;
+  if (merge) {
+    const haveD = new Set(prev.decks.map(function (d) { return d.id; }));
+    const haveF = new Set(prev.folders.map(function (f) { return f.id; }));
+    const newDecks = incoming.decks.filter(function (d) { return !haveD.has(d.id); });
+    const newFolders = incoming.folders.filter(function (f) { return !haveF.has(f.id); });
+    added = newDecks.length;
+    if (!added && !newFolders.length) { showToast('Nothing new: every deck in this backup is already here.'); return; }
+    next = Object.assign({}, prev, { decks: prev.decks.concat(newDecks), folders: prev.folders.concat(newFolders) });
+  }
+  appState = next;
+  if (!saveState() && storageAvailable) { appState = prev; showToast("Couldn't save the restored data. Nothing was changed."); return; }
+  goDashboard();
+  showToast(merge ? 'Added ' + added + ' deck' + (added === 1 ? '' : 's') : 'Backup restored');
+}
+
+// In-app dialog (browser confirm() boxes are blocked in some views and fail silently)
+let modalActions = [];
+function showModal(title, body, actions) { modalActions = actions; ui.modal = { title: title, body: body }; render(); }
+function modalAction(i) {
+  const a = modalActions[i];
+  ui.modal = null; modalActions = [];
+  if (a && a.fn) a.fn();
+  render();
+}
+function modalHTML() {
+  if (!ui.modal) return '';
+  return '<div class="modal-backdrop" onclick="if(event.target===this)modalAction(' + (modalActions.length - 1) + ')"><div class="modal" role="dialog" aria-modal="true">' +
+    '<h3>' + escapeHtml(ui.modal.title) + '</h3><p>' + escapeHtml(ui.modal.body) + '</p><div class="modal-actions">' +
+    modalActions.map(function (a, i) { return '<button class="btn ' + (a.cls || 'btn-ghost') + '" onclick="modalAction(' + i + ')">' + escapeHtml(a.label) + '</button>'; }).join('') +
+    '</div></div></div>';
+}
+
+// ---------------------------------------------------------------------
+// Folders
+// ---------------------------------------------------------------------
+function getFolder(id) { return appState.folders.find(function (f) { return f.id === id; }); }
+function toggleFolder(id) {
+  const f = getFolder(id);
+  if (!f) return;
+  f.collapsed = !f.collapsed;
+  saveState(); render();
+}
+function newFolderFormHTML() {
+  return '<div class="add-card-panel"><p style="font-weight:600; margin:0 0 0.75rem;">New folder</p>' +
+    '<div class="field" style="margin-bottom:0.75rem;"><label>Folder name</label>' +
+    '<input type="text" id="new-folder-name" placeholder="e.g. Biology" onkeydown="if(event.key===\'Enter\') submitNewFolder()"></div>' +
+    '<div class="card-edit-actions"><button class="btn-text" onclick="ui.creatingFolder=false; render()">Cancel</button>' +
+    '<button class="btn btn-primary btn-sm" onclick="submitNewFolder()">Create folder</button></div></div>';
+}
+function submitNewFolder() {
+  const name = document.getElementById('new-folder-name').value.trim();
+  if (!name) { showToast('Give your folder a name.'); return; }
+  appState.folders.push({ id: generateId(), name: name, createdAt: Date.now(), collapsed: false });
+  saveState();
+  ui.creatingFolder = false;
+  render();
+  showToast('Folder created. Open a deck to move it in.');
+}
+function folderHTML(f, rowFn) {
+  const decks = appState.decks.filter(function (d) { return d.folderId === f.id; });
+  const due = decks.reduce(function (sum, d) { return sum + d.cards.filter(isDue).length; }, 0);
+  let h = '<div class="folder-head"><button class="folder-row" aria-expanded="' + !f.collapsed + '" onclick="toggleFolder(\'' + f.id + '\')">' +
+    '<span class="folder-icon">' + ICONS.folder + '</span>' +
+    '<span class="folder-name">' + escapeHtml(f.name) + '<span class="deck-meta" style="display:block; font-weight:400;">' + decks.length + ' deck' + (decks.length === 1 ? '' : 's') + '</span></span>' +
+    (due > 0 ? '<span class="due-pill">' + due + '</span>' : '') +
+    '<span class="folder-chevron ' + (f.collapsed ? '' : 'open') + '">' + ICONS.chevron + '</span></button>' +
+    '<button class="btn-text" onclick="ui.editingFolderId=\'' + f.id + '\'; render()">Edit</button></div>';
+  if (ui.editingFolderId === f.id) {
+    h += '<div class="add-card-panel" style="margin:0.75rem 0;"><div class="field" style="margin-bottom:0.75rem;"><label>Folder name</label>' +
+      '<input type="text" id="edit-folder-name" value="' + escapeHtml(f.name) + '"></div>' +
+      '<div class="card-edit-actions"><button class="btn-text" onclick="deleteFolder(\'' + f.id + '\')">Delete folder</button>' +
+      '<button class="btn-text" onclick="ui.editingFolderId=null; render()">Cancel</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="saveFolderEdit(\'' + f.id + '\')">Save</button></div></div>';
+  }
+  if (!f.collapsed) {
+    h += '<div class="folder-body">' + (decks.length ? decks.map(function (d) { return rowFn(d); }).join('') :
+      '<p class="deck-meta" style="padding:0.9rem 0.25rem;">Empty. Open a deck and choose this folder to move it in.</p>') + '</div>';
+  }
+  return h;
+}
+function saveFolderEdit(id) {
+  const f = getFolder(id);
+  const name = document.getElementById('edit-folder-name').value.trim();
+  if (!f || !name) { showToast('Give your folder a name.'); return; }
+  f.name = name; ui.editingFolderId = null;
+  saveState(); render();
+}
+function deleteFolder(id) {
+  const f = getFolder(id);
+  if (!f) return;
+  const n = appState.decks.filter(function (d) { return d.folderId === id; }).length;
+  showModal('Delete this folder?', '"' + f.name + '" will be removed. Its ' + n + ' deck' + (n === 1 ? '' : 's') + ' will be kept and moved out of the folder.', [
+    { label: 'Delete folder', cls: 'btn-primary', fn: function () {
+      appState.decks.forEach(function (d) { if (d.folderId === id) d.folderId = null; });
+      appState.folders = appState.folders.filter(function (x) { return x.id !== id; });
+      ui.editingFolderId = null;
+      saveState();
+    } },
+    { label: 'Cancel', cls: 'btn-ghost' }
+  ]);
+}
+function deckFolderSelectHTML(deck) {
+  if (!appState.folders.length) return '';
+  return '<div class="field" style="margin:0.75rem 0 0;"><label>Folder</label><select onchange="moveDeckToFolder(\'' + deck.id + '\', this.value)">' +
+    '<option value="">No folder</option>' +
+    appState.folders.map(function (f) { return '<option value="' + f.id + '"' + (deck.folderId === f.id ? ' selected' : '') + '>' + escapeHtml(f.name) + '</option>'; }).join('') +
+    '</select></div>';
+}
+function moveDeckToFolder(deckId, folderId) {
+  const deck = getDeck(deckId), f = getFolder(folderId);
+  deck.folderId = f ? f.id : null;
+  if (f) f.collapsed = false;
+  saveState();
+  showToast(f ? 'Moved to ' + f.name : 'Removed from folder');
 }
 
 // ---------------------------------------------------------------------
@@ -1756,6 +1925,11 @@ function checkAndNotify(force) {
 // ---------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------
+document.getElementById('restore-input').addEventListener('change', function (e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (file) handleRestoreFile(file);
+});
 render();
 setTimeout(() => checkAndNotify(false), 1200);
 </script>
